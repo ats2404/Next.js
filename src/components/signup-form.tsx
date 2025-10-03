@@ -13,12 +13,14 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, initiateEmailSignUp, initiateGoogleSignIn } from '@/firebase';
-import { Loader2, Lock, Mail, User } from 'lucide-react';
+import { Loader2, Lock, Mail, User, Phone, Banknote } from 'lucide-react';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const formSchema = z.object({
-  userName: z.string().min(2, { message: 'User name must be at least 2 characters.' }),
+  shopName: z.string().min(2, { message: 'Shop name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
+  mobileNumber: z.string().min(10, { message: 'Please enter a valid 10-digit mobile number.' }).max(10, {message: 'Please enter a valid 10-digit mobile number.'}),
+  upiId: z.string().min(3, { message: 'Please enter a valid UPI ID.' }),
   password: z.string().min(8, { message: 'Password must be at least 8 characters long.' }),
   terms: z.boolean().refine(val => val === true, { message: 'You must accept the policy and terms.' }),
 });
@@ -65,8 +67,10 @@ export function SignupForm() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      userName: '',
+      shopName: '',
       email: '',
+      mobileNumber: '',
+      upiId: '',
       password: '',
       terms: false,
     },
@@ -121,12 +125,12 @@ export function SignupForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="userName"
+              name="shopName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs uppercase text-muted-foreground">User Name</FormLabel>
+                  <FormLabel className="text-xs uppercase text-muted-foreground">Shop Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Jacob josef" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                    <Input placeholder="Enter your shop name" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -139,7 +143,33 @@ export function SignupForm() {
                 <FormItem>
                   <FormLabel className="text-xs uppercase text-muted-foreground">Email Address</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="Jacob@gmail.com" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                    <Input type="email" placeholder="Email address" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="mobileNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs uppercase text-muted-foreground">User Mobile number</FormLabel>
+                  <FormControl>
+                    <Input type="tel" placeholder="Enter your mobile number" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="upiId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs uppercase text-muted-foreground">UPI ID</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your UPI ID" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
