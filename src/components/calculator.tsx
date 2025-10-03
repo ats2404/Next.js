@@ -7,6 +7,7 @@ import { LogOut, Moon, Sun, User, Pencil } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useDatabase, useAuth } from '@/firebase';
 import { ref, onValue, set } from 'firebase/database';
+import QRCode from "react-qr-code";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
@@ -45,6 +53,10 @@ const Calculator = () => {
   const [upiId, setUpiId] = useState('');
   const [isEditingUpi, setIsEditingUpi] = useState(false);
   const [newUpiId, setNewUpiId] = useState('');
+  const [isQrCodeVisible, setIsQrCodeVisible] = useState(false);
+  const [qrCodeValue, setQrCodeValue] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState('0');
+
 
   useEffect(() => {
     if (user && db) {
@@ -119,9 +131,17 @@ const Calculator = () => {
       // eslint-disable-next-line no-eval
       const result = eval(evalExpression);
       
-      const resultString = String(Number(result.toFixed(6)));
+      const resultString = String(Number(result.toFixed(2)));
       setExpression(resultString);
       setDisplayValue(resultString);
+
+      if (upiId && parseFloat(resultString) > 0) {
+        setPaymentAmount(resultString);
+        const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(shopName)}&am=${resultString}&cu=INR`;
+        setQrCodeValue(upiUrl);
+        setIsQrCodeVisible(true);
+      }
+
     } catch (e) {
       setDisplayValue('Error');
       setExpression('');
@@ -265,6 +285,27 @@ const Calculator = () => {
         <Button onClick={handleDecimalClick} className={defaultButtonClass}>.</Button>
         <Button onClick={handleEqualsClick} className={opButtonClass}>=</Button>
       </div>
+
+       <Dialog open={isQrCodeVisible} onOpenChange={setIsQrCodeVisible}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Scan to Pay</DialogTitle>
+            <DialogDescription>
+              Scan the QR code with your UPI app to pay ₹{paymentAmount} to {shopName}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-4 bg-white rounded-lg flex items-center justify-center">
+            {qrCodeValue && (
+              <QRCode
+                size={256}
+                style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                value={qrCodeValue}
+                viewBox={`0 0 256 256`}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
