@@ -16,6 +16,7 @@ import { Loader2, Lock, Phone } from 'lucide-react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Checkbox } from './ui/checkbox';
 import { get, query, ref, orderByChild, equalTo } from 'firebase/database';
+import { AuthHeader } from './auth-header';
 
 
 const formSchema = z.object({
@@ -25,15 +26,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-const AuthHeader = ({ title, subtitle }: { title: React.ReactNode, subtitle: string }) => (
-    <div className="relative -mb-12 overflow-hidden rounded-t-xl bg-[#415BFF] p-8 text-white">
-        <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/20"></div>
-        <div className="absolute -right-8 -bottom-24 h-40 w-40 rounded-full bg-white/20"></div>
-        <p className="text-lg">{subtitle}</p>
-        <h1 className="text-4xl font-bold">{title}</h1>
-    </div>
-);
 
 
 export function LoginForm() {
@@ -77,6 +69,9 @@ export function LoginForm() {
                       description: 'Welcome back!',
                     });
                     router.push('/calculator');
+                  } else {
+                    // This case handles when onAuthStateChanged is triggered by sign-out or other state changes
+                    // but after a failed sign-in attempt, the error callback below is the primary handler.
                   }
                 }, (error) => {
                     unsubscribe();
@@ -105,8 +100,8 @@ export function LoginForm() {
 
   return (
     <Card className="w-full max-w-sm overflow-hidden border-0 shadow-2xl">
-      <AuthHeader subtitle="Welcome Back," title="Log In!" />
-      <CardContent className="p-8 pt-16">
+      <AuthHeader title="Log In!" description="Welcome back, we missed you!" />
+      <CardContent className="p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -117,8 +112,8 @@ export function LoginForm() {
                   <FormLabel className="text-xs uppercase text-muted-foreground">Mobile Number</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input type="tel" placeholder="Enter your mobile number" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
-                       <Phone className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input type="tel" placeholder="Enter your mobile number" {...field} className="h-12 rounded-lg border-2 pl-10 focus-visible:ring-primary" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -133,8 +128,8 @@ export function LoginForm() {
                   <FormLabel className="text-xs uppercase text-muted-foreground">Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input type="password" placeholder="••••••••••" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
-                      <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input type="password" placeholder="••••••••••" {...field} className="h-12 rounded-lg border-2 pl-10 focus-visible:ring-primary" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -164,7 +159,7 @@ export function LoginForm() {
                 </Link>
             </div>
 
-            <Button type="submit" className="w-full h-12 rounded-full bg-[#415BFF] text-base font-bold" disabled={isLoading}>
+            <Button type="submit" className="w-full h-12 rounded-full bg-primary text-base font-bold" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Log in
             </Button>

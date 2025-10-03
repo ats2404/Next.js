@@ -4,37 +4,47 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the ATS Calculator application.",
+      "description": "Represents a user of the application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the user entity."
+          "description": "Unique identifier for the user entity (Firebase Auth UID)."
         },
         "email": {
           "type": "string",
           "description": "Email address of the user.",
           "format": "email"
         },
-        "firstName": {
+        "shopName": {
           "type": "string",
-          "description": "First name of the user."
+          "description": "Name of the user's shop."
         },
-        "lastName": {
+        "mobileNumber": {
           "type": "string",
-          "description": "Last name of the user."
+          "description": "User's 10-digit mobile phone number."
+        },
+        "upiId": {
+          "type": "string",
+          "description": "User's UPI ID for payments."
         },
         "signUpDate": {
           "type": "string",
           "description": "Date and time the user signed up.",
           "format": "date-time"
+        },
+        "status": {
+            "type": "string",
+            "description": "The user's account status.",
+            "enum": ["active", "inactive"]
         }
       },
       "required": [
         "id",
         "email",
-        "firstName",
-        "lastName",
-        "signUpDate"
+        "shopName",
+        "mobileNumber",
+        "signUpDate",
+        "status"
       ]
     },
     "Theme": {
@@ -86,7 +96,8 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "anonymous",
+      "google.com"
     ]
   },
   "firestore": {
@@ -98,7 +109,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user profile information.  This path enforces ownership-based access control. The userId parameter identifies the user who owns this document.",
+          "description": "Stores user profile information. This path enforces ownership-based access control. The userId parameter identifies the user who owns this document.",
           "params": [
             {
               "name": "userId",

@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { AuthHeader } from './auth-header';
 
 
 const formSchema = z.object({
@@ -37,15 +38,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-const AuthHeader = ({ title, subtitle }: { title: React.ReactNode, subtitle: string }) => (
-    <div className="relative -mb-12 overflow-hidden rounded-t-xl bg-[#415BFF] p-8 text-white">
-        <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/20"></div>
-        <div className="absolute -right-8 -bottom-24 h-40 w-40 rounded-full bg-white/20"></div>
-        <p className="text-lg">{subtitle}</p>
-        <h1 className="text-4xl font-bold">{title}</h1>
-    </div>
-);
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
@@ -90,9 +82,7 @@ export function SignupForm() {
   });
 
   const writeUserData = (user: FirebaseUser, data: FormValues) => {
-    // For this example, we'll set a static status.
-    // In a real app, this might be determined by a payment status or other business logic.
-    const status = 'active'; // or 'inactive'
+    const status = 'active'; 
 
     set(ref(db, 'users/' + user.uid), {
       shopName: data.shopName,
@@ -127,14 +117,12 @@ export function SignupForm() {
         if (data) {
           writeUserData(user, data);
         } else {
-          // Handle social login, where we don't have form data
-          // Maybe pre-fill from social profile and show a completion step?
-          // For now, we just log and redirect.
+          // Handle social login
           const socialData: FormValues = {
             shopName: user.displayName || 'New Shop',
             email: user.email || '',
             mobileNumber: user.phoneNumber || '',
-            upiId: '', // not available from social providers
+            upiId: '', 
             password: '',
             terms: true,
           }
@@ -177,8 +165,8 @@ export function SignupForm() {
   return (
     <>
       <Card className="w-full max-w-sm overflow-hidden border-0 shadow-2xl">
-        <AuthHeader subtitle="Hello," title="Sign Up!" />
-        <CardContent className="p-8 pt-16">
+        <AuthHeader title="Sign Up!" description="Create an account to get started." />
+        <CardContent className="p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -188,7 +176,10 @@ export function SignupForm() {
                   <FormItem>
                     <FormLabel className="text-xs uppercase text-muted-foreground">Shop Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your shop name" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input placeholder="Enter your shop name" {...field} className="h-12 rounded-lg border-2 pl-10 focus-visible:ring-primary" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -201,7 +192,10 @@ export function SignupForm() {
                   <FormItem>
                     <FormLabel className="text-xs uppercase text-muted-foreground">Email Address</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="Email address" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input type="email" placeholder="Enter your email address" {...field} className="h-12 rounded-lg border-2 pl-10 focus-visible:ring-primary" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -212,9 +206,12 @@ export function SignupForm() {
                 name="mobileNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs uppercase text-muted-foreground">User Mobile number</FormLabel>
+                    <FormLabel className="text-xs uppercase text-muted-foreground">Mobile number</FormLabel>
                     <FormControl>
-                      <Input type="tel" placeholder="Enter your mobile number" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input type="tel" placeholder="Enter your mobile number" {...field} className="h-12 rounded-lg border-2 pl-10 focus-visible:ring-primary" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -227,7 +224,10 @@ export function SignupForm() {
                   <FormItem>
                     <FormLabel className="text-xs uppercase text-muted-foreground">UPI ID</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your UPI ID" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                      <div className="relative">
+                        <Banknote className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input placeholder="Enter your UPI ID" {...field} className="h-12 rounded-lg border-2 pl-10 focus-visible:ring-primary" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -241,8 +241,8 @@ export function SignupForm() {
                     <FormLabel className="text-xs uppercase text-muted-foreground">Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input type="password" placeholder="Enter password" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
-                        <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input type="password" placeholder="Enter password" {...field} className="h-12 rounded-lg border-2 pl-10 focus-visible:ring-primary" />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -269,7 +269,7 @@ export function SignupForm() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full h-12 rounded-full bg-[#415BFF] text-base font-bold" disabled={isLoading}>
+              <Button type="submit" className="w-full h-12 rounded-full bg-primary text-base font-bold" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign up
               </Button>
@@ -277,23 +277,24 @@ export function SignupForm() {
           </Form>
         </CardContent>
         <CardFooter className="flex flex-col items-center gap-4 pb-8">
-          <div className="flex items-center gap-4">
-              <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
-                  <TwitterIcon className="h-6 w-6" />
-              </Button>
-              <Button onClick={handleGoogleSignIn} variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
-                  <GoogleIcon className="h-6 w-6" />
-              </Button>
-              <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
-                  <LinkedinIcon className="h-6 w-6" />
-              </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{' '}
-            <Link href="/login" className="font-semibold text-primary hover:underline">
-              Login
-            </Link>
-          </p>
+            <p className="text-sm text-muted-foreground">Or sign up with</p>
+            <div className="flex items-center gap-4">
+                <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
+                    <TwitterIcon className="h-6 w-6" />
+                </Button>
+                <Button onClick={handleGoogleSignIn} variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
+                    <GoogleIcon className="h-6 w-6" />
+                </Button>
+                <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
+                    <LinkedinIcon className="h-6 w-6" />
+                </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+                Already have an account?{' '}
+                <Link href="/login" className="font-semibold text-primary hover:underline">
+                Login
+                </Link>
+            </p>
         </CardFooter>
       </Card>
 
