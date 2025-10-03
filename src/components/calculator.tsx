@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { Moon, Sun, User } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useUser } from '@/firebase';
+import { useUser, useDatabase } from '@/firebase';
+import { ref, onValue } from 'firebase/database';
+
 
 type Operator = '+' | '-' | '×' | '÷';
 
@@ -14,6 +16,21 @@ const Calculator = () => {
   const [displayValue, setDisplayValue] = useState('0');
   const [expression, setExpression] = useState('');
   const { user } = useUser();
+  const db = useDatabase();
+  const [shopName, setShopName] = useState('');
+
+  useEffect(() => {
+    if (user && db) {
+      const userRef = ref(db, 'users/' + user.uid);
+      onValue(userRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.shopName) {
+          setShopName(data.shopName);
+        }
+      });
+    }
+  }, [user, db]);
+
 
   const handleNumberClick = (num: string) => {
     if (displayValue === '0') {
@@ -114,6 +131,7 @@ const Calculator = () => {
             <span className="sr-only">Toggle theme</span>
           </Button>
         </div>
+        <h1 className="text-xl font-semibold text-center">{shopName}</h1>
         <div className="w-14 flex justify-end">
           {user ? (
             <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground">
@@ -122,7 +140,7 @@ const Calculator = () => {
           ) : (
             <Link href="/login">
               <Button variant="ghost" size="icon" className="rounded-full">
-                <User className="h-[1.5rem] w-[1.5rem]" />
+                <User className="h-[1.5rem] w-[1.jsrem]" />
               </Button>
             </Link>
           )}
