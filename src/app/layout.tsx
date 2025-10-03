@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'ATS Calculator',
-  description: 'Optimize your resume for Applicant Tracking Systems',
+  title: 'Dolphy App',
+  description: 'The best app for all your needs',
 };
 
 export default function RootLayout({
@@ -17,10 +17,12 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased">
-        {children}
+      <body className="font-sans antialiased">
+        <div className="min-h-screen bg-gradient-to-br from-cyan-300 to-blue-500">
+          {children}
+        </div>
         <Toaster />
       </body>
     </html>

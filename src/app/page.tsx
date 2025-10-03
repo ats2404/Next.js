@@ -1,22 +1,13 @@
-import AtsCalculator from '@/components/ats-calculator';
-import { AtsLogo } from '@/components/icons';
+import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 w-full border-b bg-background/80 backdrop-blur-sm">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-          <div className="flex items-center gap-2">
-            <AtsLogo className="h-6 w-6 text-primary" />
-            <h1 className="font-headline text-xl font-semibold tracking-tight">
-              ATS Calculator
-            </h1>
-          </div>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-8 md:px-6 md:py-12">
-        <AtsCalculator />
-      </main>
+    <div className="flex flex-col items-center justify-center min-h-screen text-white">
+      <h1 className="text-4xl font-bold mb-4">Welcome</h1>
+      <div className="flex gap-4">
+        <Link href="/login" className="px-4 py-2 bg-white text-blue-500 rounded-md">Login</Link>
+        <Link href="/signup" className="px-4 py-2 bg-white text-blue-500 rounded-md">Sign Up</Link>
+      </div>
     </div>
   );
 }
