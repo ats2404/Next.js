@@ -9,23 +9,52 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, initiateEmailSignUp } from '@/firebase';
 import { Loader2, Lock, Mail, User } from 'lucide-react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { AuthHeader } from './auth-header';
 
 const formSchema = z.object({
-  firstName: z.string().min(2, { message: 'First name must be at least 2 characters.' }),
-  lastName: z.string().min(2, { message: 'Last name must be at least 2 characters.' }),
+  userName: z.string().min(2, { message: 'User name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(8, { message: 'Password must be at least 8 characters long.' }),
-  terms: z.boolean().refine(val => val === true, { message: 'You must accept the terms and conditions.' }),
+  terms: z.boolean().refine(val => val === true, { message: 'You must accept the policy and terms.' }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const AuthHeader = ({ title, subtitle }: { title: React.ReactNode, subtitle: string }) => (
+    <div className="relative -mb-12 overflow-hidden rounded-t-xl bg-[#415BFF] p-8 text-white">
+        <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/20"></div>
+        <div className="absolute -right-8 -bottom-24 h-40 w-40 rounded-full bg-white/20"></div>
+        <p className="text-lg">{subtitle}</p>
+        <h1 className="text-4xl font-bold">{title}</h1>
+    </div>
+);
+
+const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
+        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.658-3.301-11.303-7.802l-6.573,4.817C9.656,39.663,16.318,44,24,44z"/>
+        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.447-2.275,4.481-4.244,5.918l6.19,5.238C39.99,35.15,44,29.89,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+    </svg>
+);
+const TwitterIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
+        <path fill="#03A9F4" d="M42,12.429c-1.323,0.586-2.746,0.981-4.23,1.159c1.526-0.916,2.698-2.366,3.252-4.076c-1.428,0.845-3.004,1.46-4.671,1.787c-1.348-1.437-3.27-2.335-5.375-2.335c-4.068,0-7.366,3.298-7.366,7.366c0,0.578,0.065,1.14,0.192,1.684C19.894,17.77,15.251,15.1,12.04,11.23c-0.628,1.076-0.988,2.324-0.988,3.652c0,2.556,1.301,4.81,3.281,6.13c-1.208-0.038-2.344-0.37-3.338-0.922c-0.001,0.03-0.001,0.061-0.001,0.092c0,3.57,2.54,6.548,5.91,7.227c-0.618,0.169-1.269,0.259-1.941,0.259c-0.475,0-0.936-0.046-1.386-0.132c0.938,2.926,3.659,5.056,6.884,5.116c-2.522,1.976-5.703,3.154-9.157,3.154c-0.596,0-1.183-0.035-1.761-0.104C9.268,36.786,13.385,38,17.805,38c12.21,0,18.883-10.12,18.883-18.883c0-0.288-0.007-0.575-0.02-0.86C39.95,15.2,41.114,13.9,42,12.429"/>
+    </svg>
+);
+
+const LinkedinIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
+        <path fill="#0288D1" d="M42,37c0,2.762-2.238,5-5,5H11c-2.761,0-5-2.238-5-5V11c0-2.762,2.239-5,5-5h26c2.762,0,5,2.238,5,5V37z"/>
+        <path fill="#FFF" d="M12 19H17V36H12zM14.485 17h-.028C12.965 17 12 15.888 12 14.499 12 13.08 12.995 12 14.514 12c1.521 0 2.458 1.08 2.486 2.499C17 15.887 16.035 17 14.485 17zM36 36h-5v-9.099c0-2.198-1.225-3.698-3.192-3.698-1.501 0-2.313 1.012-2.707 1.99C24.957 25.543 25 26.511 25 27v9h-5V19h5v2.616C25.721 20.5 26.85 19 29.738 19c3.578 0 6.261 2.25 6.261 7.274L36 36z"/>
+    </svg>
+);
+
 
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -36,8 +65,7 @@ export function SignupForm() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
+      userName: '',
       email: '',
       password: '',
       terms: false,
@@ -50,17 +78,14 @@ export function SignupForm() {
     initiateEmailSignUp(auth, data.email, data.password);
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-        unsubscribe(); // Unsubscribe after first event
+        unsubscribe(); 
         setIsLoading(false);
         if (user) {
             toast({
                 title: 'Account Created',
                 description: "You've successfully signed up!",
             });
-            router.push('/');
-        } else {
-            // This path could be hit if the auth state change isn't from this sign-up.
-            // A more robust solution might use custom error handling.
+            router.push('/calculator');
         }
     }, (error) => {
         unsubscribe();
@@ -74,56 +99,32 @@ export function SignupForm() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <AuthHeader
-        title="Create an Account"
-        description="Join us to get started with your calculations."
-      />
-      <CardContent>
+    <Card className="w-full max-w-sm overflow-hidden border-0 shadow-2xl">
+      <AuthHeader subtitle="Hello," title="Sign Up!" />
+      <CardContent className="p-8 pt-16">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input placeholder="John" {...field} className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="userName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs uppercase text-muted-foreground">User Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Jacob josef" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-xs uppercase text-muted-foreground">Email Address</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="email" placeholder="john.doe@example.com" {...field} className="pl-10" />
-                    </div>
+                    <Input type="email" placeholder="Jacob@gmail.com" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -134,11 +135,11 @@ export function SignupForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="text-xs uppercase text-muted-foreground">Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="password" placeholder="••••••••" {...field} className="pl-10" />
+                      <Input type="password" placeholder="Enter password" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                      <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -157,29 +158,37 @@ export function SignupForm() {
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel className="font-normal">
-                      I agree to the{' '}
-                      <Link href="#" className="font-semibold text-primary hover:underline">
-                        Terms and Conditions
-                      </Link>
+                    <FormLabel className="font-normal text-muted-foreground">
+                      I accept the policy and terms
                     </FormLabel>
                     <FormMessage />
                   </div>
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full h-12 rounded-full bg-[#415BFF] text-base font-bold" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Account
+              Sign up
             </Button>
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex flex-col items-center gap-4">
+      <CardFooter className="flex flex-col items-center gap-4 pb-8">
+        <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
+                <TwitterIcon className="h-6 w-6" />
+            </Button>
+            <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
+                <GoogleIcon className="h-6 w-6" />
+            </Button>
+            <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
+                <LinkedinIcon className="h-6 w-6" />
+            </Button>
+        </div>
         <p className="text-sm text-muted-foreground">
           Already have an account?{' '}
           <Link href="/login" className="font-semibold text-primary hover:underline">
-            Log in
+            Login
           </Link>
         </p>
       </CardFooter>

@@ -9,19 +9,30 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, initiateEmailSignIn } from '@/firebase';
 import { Loader2, Lock, Mail } from 'lucide-react';
-import { AuthHeader } from './auth-header';
 import { onAuthStateChanged } from 'firebase/auth';
+import { Checkbox } from './ui/checkbox';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(8, { message: 'Password must be at least 8 characters long.' }),
+  rememberMe: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const AuthHeader = ({ title, subtitle }: { title: React.ReactNode, subtitle: string }) => (
+    <div className="relative -mb-12 overflow-hidden rounded-t-xl bg-[#415BFF] p-8 text-white">
+        <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/20"></div>
+        <div className="absolute -right-8 -bottom-24 h-40 w-40 rounded-full bg-white/20"></div>
+        <p className="text-lg">{subtitle}</p>
+        <h1 className="text-4xl font-bold">{title}</h1>
+    </div>
+);
+
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +45,7 @@ export function LoginForm() {
     defaultValues: {
       email: '',
       password: '',
+      rememberMe: false
     },
   });
 
@@ -50,11 +62,7 @@ export function LoginForm() {
           title: 'Login Successful',
           description: 'Welcome back!',
         });
-        router.push('/');
-      } else {
-        // This might be too aggressive if the listener fires on initial load before sign-in.
-        // It's better to handle errors via a separate mechanism.
-        // For now, we rely on the user seeing no change and the form being reset.
+        router.push('/calculator');
       }
     }, (error) => {
         unsubscribe();
@@ -68,24 +76,20 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <AuthHeader
-        title="Welcome Back!"
-        description="Log in to your account to continue."
-      />
-      <CardContent>
+    <Card className="w-full max-w-sm overflow-hidden border-0 shadow-2xl">
+      <AuthHeader subtitle="Welcome Back," title="Log In!" />
+      <CardContent className="p-8 pt-16">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-xs uppercase text-muted-foreground">Email Address</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="email" placeholder="john.doe@example.com" {...field} className="pl-10" />
+                      <Input type="email" placeholder="Jacob@gmail.com" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -97,32 +101,47 @@ export function LoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="text-xs uppercase text-muted-foreground">Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="password" placeholder="••••••••" {...field} className="pl-10" />
+                      <Input type="password" placeholder="••••••••••" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                      <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <div className="flex items-center justify-between text-sm">
+                <FormField
+                    control={form.control}
+                    name="rememberMe"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-2 space-y-0">
+                        <FormControl>
+                            <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            />
+                        </FormControl>
+                        <FormLabel className="font-normal text-muted-foreground">
+                            Remember me
+                        </FormLabel>
+                        </FormItem>
+                    )}
+                />
+                <Link href="#" className="font-medium text-primary hover:underline">
+                    Forgot password?
+                </Link>
+            </div>
+
+            <Button type="submit" className="w-full h-12 rounded-full bg-[#415BFF] text-base font-bold" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Log In
+              Log in
             </Button>
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex flex-col items-center gap-4">
-        <p className="text-sm text-muted-foreground">
-          Don't have an account?{' '}
-          <Link href="/signup" className="font-semibold text-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
-      </CardFooter>
     </Card>
   );
 }

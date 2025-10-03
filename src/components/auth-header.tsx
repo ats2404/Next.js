@@ -20,7 +20,7 @@ export function AuthHeader({ title, description }: AuthHeaderProps) {
     return (
         <CardHeader className="relative">
             <div className="absolute top-4 right-4 flex items-center gap-2">
-                 <Link href="/">
+                 <Link href="/calculator">
                     <Button variant="ghost" size="icon" className="rounded-full">
                         <Calculator className="h-[1.2rem] w-[1.2rem]" />
                         <span className="sr-only">Calculator</span>
