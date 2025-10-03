@@ -1,9 +1,26 @@
-import AtsCalculator from '@/components/ats-calculator';
+'use client';
+
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function HomePage() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading) {
+      if (user) {
+        router.push('/calculator');
+      } else {
+        router.push('/signup');
+      }
+    }
+  }, [user, isUserLoading, router]);
+
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <AtsCalculator />
-    </main>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <p>Loading...</p>
+    </div>
   );
 }
