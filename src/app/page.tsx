@@ -1,9 +1,9 @@
-import { SignupForm } from '@/components/signup-form';
+import AtsCalculator from '@/components/ats-calculator';
 
-export default function SignupPage() {
+export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-cyan-300 to-blue-500 p-4">
-      <SignupForm />
+    <main className="min-h-screen bg-background p-4 md:p-8">
+      <AtsCalculator />
     </main>
   );
 }
