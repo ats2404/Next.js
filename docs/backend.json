@@ -1,0 +1,133 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the ATS Calculator application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Last name of the user."
+        },
+        "signUpDate": {
+          "type": "string",
+          "description": "Date and time the user signed up.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName",
+        "signUpDate"
+      ]
+    },
+    "Theme": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Theme",
+      "type": "object",
+      "description": "Represents a user-selected theme for the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the theme entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Theme)"
+        },
+        "primaryColor": {
+          "type": "string",
+          "description": "The primary color of the theme (e.g., hex code)."
+        },
+        "backgroundColor": {
+          "type": "string",
+          "description": "The background color of the theme (e.g., hex code)."
+        },
+        "accentColor": {
+          "type": "string",
+          "description": "The accent color of the theme (e.g., hex code)."
+        },
+        "headlineFont": {
+          "type": "string",
+          "description": "The headline font of the theme."
+        },
+        "bodyFont": {
+          "type": "string",
+          "description": "The body font of the theme."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "primaryColor",
+        "backgroundColor",
+        "accentColor",
+        "headlineFont",
+        "bodyFont"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information.  This path enforces ownership-based access control. The userId parameter identifies the user who owns this document.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/themes/{themeId}",
+        "definition": {
+          "entityName": "Theme",
+          "schema": {
+            "$ref": "#/backend/entities/Theme"
+          },
+          "description": "Stores user-defined theme settings. Includes denormalized 'userId' field for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user who owns the theme."
+            },
+            {
+              "name": "themeId",
+              "description": "The unique identifier for the theme."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to securely manage user data and themes while ensuring authorization independence and optimized querying.  The primary strategy employed is denormalization to avoid `get()` calls in security rules and enable atomic operations.  User data is stored under `/users/{userId}`. Themes are stored as a subcollection under each user (`/users/{userId}/themes/{themeId}`), which naturally enforces ownership. The `Theme` documents will contain a `userId` field, effectively denormalizing user ownership within each `Theme` document to achieve Authorization Independence, since access control can be directly checked against the document's `userId` field without needing to `get()` the parent user document.  This approach simplifies security rules and allows for secure and efficient list operations (QAPs) by ensuring all documents in the `themes` subcollection share the same access control requirements.  This structure also aligns well with the application's 1:N relationship between users and themes."
+  }
+}
