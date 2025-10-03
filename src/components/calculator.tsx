@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Button } from './ui/button';
-import { Moon, Sun, Delete } from 'lucide-react';
+import { Moon, Sun, User } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useUser } from '@/firebase';
 
 type Operator = '+' | '-' | '×' | '÷';
 
@@ -11,6 +13,7 @@ const Calculator = () => {
   const { theme, setTheme } = useTheme();
   const [displayValue, setDisplayValue] = useState('0');
   const [expression, setExpression] = useState('');
+  const { user } = useUser();
 
   const handleNumberClick = (num: string) => {
     if (displayValue === '0') {
@@ -24,7 +27,6 @@ const Calculator = () => {
   const handleOperatorClick = (op: Operator) => {
     if (displayValue === '0' && expression === '') return;
 
-    // Prevent adding an operator if the last part of the expression is already an operator
     const lastChar = expression.slice(-1);
     if (['+', '-', '×', '÷'].includes(lastChar)) {
         setExpression(prev => prev.slice(0, -1) + op);
@@ -38,18 +40,18 @@ const Calculator = () => {
     if (expression === '') return;
 
     try {
-      // Replace '×' with '*' and '÷' with '/' for evaluation
-      const evalExpression = expression.replace(/×/g, '*').replace(/÷/g, '/');
+      const evalExpression = expression
+        .replace(/×/g, '*')
+        .replace(/÷/g, '/');
       
-      // Basic validation to prevent unsafe evaluation
-      if (/[^0-9+\-*/.]/.test(evalExpression)) {
+      if (/[^0-9+\-*/.()]/.test(evalExpression)) {
           throw new Error("Invalid expression");
       }
 
       // eslint-disable-next-line no-eval
       const result = eval(evalExpression);
       
-      const resultString = String(Number(result.toFixed(6))); // Avoid floating point issues and trailing zeros
+      const resultString = String(Number(result.toFixed(6)));
       setExpression(resultString);
       setDisplayValue(resultString);
     } catch (e) {
@@ -69,7 +71,6 @@ const Calculator = () => {
       const currentValue = parseFloat(displayValue);
       const newValue = String(currentValue * -1);
 
-      // Need to replace the tail of the expression
       const len = displayValue.length;
       setExpression(prev => prev.substring(0, prev.length - len) + `(${newValue})`);
       setDisplayValue(newValue);
@@ -94,30 +95,6 @@ const Calculator = () => {
     }
   };
 
-  const handleBackspaceClick = () => {
-    if (expression.length > 0) {
-      const newExpression = expression.slice(0, -1);
-      setExpression(newExpression);
-
-      // Re-evaluate display
-      const operators = ['+', '-', '×', '÷'];
-      let lastOperatorIndex = -1;
-      for (const op of operators) {
-        lastOperatorIndex = Math.max(lastOperatorIndex, newExpression.lastIndexOf(op));
-      }
-
-      if (lastOperatorIndex === -1) {
-        setDisplayValue(newExpression || '0');
-      } else {
-        setDisplayValue(newExpression.slice(lastOperatorIndex + 1));
-      }
-      
-      if (newExpression === '') {
-        setDisplayValue('0');
-      }
-    }
-  };
-
   const buttonClass = 'h-20 w-20 rounded-full text-3xl font-medium';
   const opButtonClass = `${buttonClass} bg-[hsl(var(--btn-operator-bg))] text-[hsl(var(--btn-operator-fg))] hover:bg-[hsl(var(--btn-operator-bg))]`;
   const greyButtonClass = `${buttonClass} bg-[hsl(var(--btn-grey-bg))] text-[hsl(var(--btn-grey-fg))] hover:bg-[hsl(var(--btn-grey-bg))]`;
@@ -136,6 +113,19 @@ const Calculator = () => {
             <Moon className="absolute h-[1.5rem] w-[1.5rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             <span className="sr-only">Toggle theme</span>
           </Button>
+        </div>
+        <div className="w-14 flex justify-end">
+          {user ? (
+            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground">
+              <User className="h-5 w-5" />
+            </div>
+          ) : (
+            <Link href="/login">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <User className="h-[1.5rem] w-[1.5rem]" />
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
       <div className="w-full text-right pr-6 h-28 flex flex-col justify-end">
