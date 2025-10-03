@@ -3,16 +3,29 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { LogOut, Moon, Sun, User } from 'lucide-react';
+import { LogOut, Moon, Sun, User, Pencil } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useDatabase, useAuth } from '@/firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Input } from './ui/input';
+import { useToast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
@@ -27,8 +40,11 @@ const Calculator = () => {
   const db = useDatabase();
   const auth = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [shopName, setShopName] = useState('');
   const [upiId, setUpiId] = useState('');
+  const [isEditingUpi, setIsEditingUpi] = useState(false);
+  const [newUpiId, setNewUpiId] = useState('');
 
   useEffect(() => {
     if (user && db) {
@@ -38,6 +54,7 @@ const Calculator = () => {
         if (data) {
           setShopName(data.shopName || '');
           setUpiId(data.upiId || '');
+          setNewUpiId(data.upiId || '');
         } else {
           setShopName('');
           setUpiId('');
@@ -50,6 +67,20 @@ const Calculator = () => {
   const handleLogout = () => {
     signOut(auth);
     router.push('/login');
+  };
+
+  const handleUpiUpdate = () => {
+    if (user && db && newUpiId) {
+      const userRef = ref(db, `users/${user.uid}/upiId`);
+      set(userRef, newUpiId)
+        .then(() => {
+          toast({ title: "Success", description: "UPI ID updated successfully." });
+          setIsEditingUpi(false);
+        })
+        .catch((error) => {
+          toast({ variant: "destructive", title: "Error", description: "Failed to update UPI ID." });
+        });
+    }
   };
 
   const handleNumberClick = (num: string) => {
@@ -153,7 +184,33 @@ const Calculator = () => {
         </div>
         <div className="text-center">
             <h1 className="text-xl font-semibold">{shopName}</h1>
-            <p className="text-sm text-muted-foreground">{upiId}</p>
+            <div className="flex items-center gap-2 justify-center">
+              <p className="text-sm text-muted-foreground">{upiId}</p>
+                <AlertDialog open={isEditingUpi} onOpenChange={setIsEditingUpi}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                      <Pencil className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Edit UPI ID</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Update your UPI ID below. This will be displayed on your calculator.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <Input 
+                      value={newUpiId}
+                      onChange={(e) => setNewUpiId(e.target.value)}
+                      placeholder="Enter new UPI ID"
+                    />
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleUpiUpdate}>Save</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+            </div>
         </div>
         <div className="w-14 flex justify-end">
           {user ? (
