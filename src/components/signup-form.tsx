@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, initiateEmailSignUp } from '@/firebase';
+import { useAuth, initiateEmailSignUp, initiateGoogleSignIn } from '@/firebase';
 import { Loader2, Lock, Mail, User } from 'lucide-react';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -72,6 +72,26 @@ export function SignupForm() {
     },
   });
 
+  const handleAuthChange = (user: any) => {
+    setIsLoading(false);
+    if (user) {
+        toast({
+            title: 'Account Created',
+            description: "You've successfully signed up!",
+        });
+        router.push('/calculator');
+    }
+  }
+
+  const handleAuthError = (error: any) => {
+    setIsLoading(false);
+    toast({
+        variant: 'destructive',
+        title: 'Sign-up Failed',
+        description: error.message || 'An unknown error occurred.',
+    });
+  }
+
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     
@@ -79,24 +99,19 @@ export function SignupForm() {
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
         unsubscribe(); 
-        setIsLoading(false);
-        if (user) {
-            toast({
-                title: 'Account Created',
-                description: "You've successfully signed up!",
-            });
-            router.push('/calculator');
-        }
-    }, (error) => {
-        unsubscribe();
-        setIsLoading(false);
-        toast({
-            variant: 'destructive',
-            title: 'Sign-up Failed',
-            description: error.message || 'An unknown error occurred.',
-        });
-    });
+        handleAuthChange(user);
+    }, handleAuthError);
   };
+
+  const handleGoogleSignIn = () => {
+    setIsLoading(true);
+    initiateGoogleSignIn(auth);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      unsubscribe();
+      handleAuthChange(user);
+    }, handleAuthError);
+  };
+
 
   return (
     <Card className="w-full max-w-sm overflow-hidden border-0 shadow-2xl">
@@ -178,7 +193,7 @@ export function SignupForm() {
             <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
                 <TwitterIcon className="h-6 w-6" />
             </Button>
-            <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
+            <Button onClick={handleGoogleSignIn} variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
                 <GoogleIcon className="h-6 w-6" />
             </Button>
             <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
