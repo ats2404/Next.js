@@ -84,12 +84,13 @@ export function SignupForm() {
   const writeUserData = (user: FirebaseUser, data: FormValues) => {
     const status = 'active'; 
 
-    set(ref(db, 'users/' + user.uid), {
+    set(ref(db, 'users/' + data.mobileNumber), {
       shopName: data.shopName,
       email: data.email,
       mobileNumber: data.mobileNumber,
       upiId: data.upiId,
       status: status,
+      uid: user.uid,
     }).then(() => {
       setIsLoading(false);
       toast({
