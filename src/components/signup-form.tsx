@@ -17,7 +17,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { GoogleIcon, LinkedinIcon, Loader2, Lock, TwitterIcon } from 'lucide-react';
+import { Loader2, Lock } from 'lucide-react';
+import { GoogleIcon, LinkedinIcon, TwitterIcon } from '@/components/icons';
 import { AuthHeader } from './auth-header';
 
 const formSchema = z.object({
