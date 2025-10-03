@@ -12,9 +12,20 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, initiateEmailSignUp, initiateGoogleSignIn } from '@/firebase';
+import { useAuth, useDatabase, initiateEmailSignUp, initiateGoogleSignIn } from '@/firebase';
 import { Loader2, Lock, Mail, User, Phone, Banknote } from 'lucide-react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { ref, set } from "firebase/database";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
 
 const formSchema = z.object({
   shopName: z.string().min(2, { message: 'Shop name must be at least 2 characters.' }),
@@ -60,9 +71,11 @@ const LinkedinIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
+  const db = useDatabase();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -76,14 +89,59 @@ export function SignupForm() {
     },
   });
 
-  const handleAuthChange = (user: any) => {
-    setIsLoading(false);
-    if (user) {
-        toast({
-            title: 'Account Created',
-            description: "You've successfully signed up!",
-        });
+  const writeUserData = (user: FirebaseUser, data: FormValues) => {
+    // For this example, we'll set a static status.
+    // In a real app, this might be determined by a payment status or other business logic.
+    const status = 'active'; // or 'inactive'
+
+    set(ref(db, 'users/' + user.uid), {
+      shopName: data.shopName,
+      email: data.email,
+      mobileNumber: data.mobileNumber,
+      upiId: data.upiId,
+      status: status,
+    }).then(() => {
+      setIsLoading(false);
+      toast({
+          title: 'Account Created',
+          description: "You've successfully signed up!",
+      });
+
+      if (status === 'active') {
         router.push('/calculator');
+      } else {
+        setShowSubscriptionDialog(true);
+      }
+    }).catch((error) => {
+      setIsLoading(false);
+      toast({
+          variant: 'destructive',
+          title: 'Sign-up Failed',
+          description: `Could not save user data: ${error.message}`,
+      });
+    });
+  }
+
+  const handleAuthChange = (user: FirebaseUser | null, data?: FormValues) => {
+    if (user) {
+        if (data) {
+          writeUserData(user, data);
+        } else {
+          // Handle social login, where we don't have form data
+          // Maybe pre-fill from social profile and show a completion step?
+          // For now, we just log and redirect.
+          const socialData: FormValues = {
+            shopName: user.displayName || 'New Shop',
+            email: user.email || '',
+            mobileNumber: user.phoneNumber || '',
+            upiId: '', // not available from social providers
+            password: '',
+            terms: true,
+          }
+          writeUserData(user, socialData);
+        }
+    } else {
+        setIsLoading(false);
     }
   }
 
@@ -103,7 +161,7 @@ export function SignupForm() {
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
         unsubscribe(); 
-        handleAuthChange(user);
+        handleAuthChange(user, data);
     }, handleAuthError);
   };
 
@@ -116,127 +174,149 @@ export function SignupForm() {
     }, handleAuthError);
   };
 
-
   return (
-    <Card className="w-full max-w-sm overflow-hidden border-0 shadow-2xl">
-      <AuthHeader subtitle="Hello," title="Sign Up!" />
-      <CardContent className="p-8 pt-16">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="shopName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs uppercase text-muted-foreground">Shop Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your shop name" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs uppercase text-muted-foreground">Email Address</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Email address" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="mobileNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs uppercase text-muted-foreground">User Mobile number</FormLabel>
-                  <FormControl>
-                    <Input type="tel" placeholder="Enter your mobile number" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="upiId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs uppercase text-muted-foreground">UPI ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your UPI ID" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs uppercase text-muted-foreground">Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input type="password" placeholder="Enter password" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
-                      <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="terms"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md py-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="font-normal text-muted-foreground">
-                      I accept the policy and terms
-                    </FormLabel>
+    <>
+      <Card className="w-full max-w-sm overflow-hidden border-0 shadow-2xl">
+        <AuthHeader subtitle="Hello," title="Sign Up!" />
+        <CardContent className="p-8 pt-16">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="shopName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs uppercase text-muted-foreground">Shop Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your shop name" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                    </FormControl>
                     <FormMessage />
-                  </div>
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full h-12 rounded-full bg-[#415BFF] text-base font-bold" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign up
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="flex flex-col items-center gap-4 pb-8">
-        <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
-                <TwitterIcon className="h-6 w-6" />
-            </Button>
-            <Button onClick={handleGoogleSignIn} variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
-                <GoogleIcon className="h-6 w-6" />
-            </Button>
-            <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
-                <LinkedinIcon className="h-6 w-6" />
-            </Button>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <Link href="/login" className="font-semibold text-primary hover:underline">
-            Login
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs uppercase text-muted-foreground">Email Address</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Email address" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="mobileNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs uppercase text-muted-foreground">User Mobile number</FormLabel>
+                    <FormControl>
+                      <Input type="tel" placeholder="Enter your mobile number" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="upiId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs uppercase text-muted-foreground">UPI ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your UPI ID" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs uppercase text-muted-foreground">Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input type="password" placeholder="Enter password" {...field} className="h-12 rounded-lg border-2 focus-visible:ring-primary" />
+                        <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="terms"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md py-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="font-normal text-muted-foreground">
+                        I accept the policy and terms
+                      </FormLabel>
+                      <FormMessage />
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full h-12 rounded-full bg-[#415BFF] text-base font-bold" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign up
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+        <CardFooter className="flex flex-col items-center gap-4 pb-8">
+          <div className="flex items-center gap-4">
+              <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
+                  <TwitterIcon className="h-6 w-6" />
+              </Button>
+              <Button onClick={handleGoogleSignIn} variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
+                  <GoogleIcon className="h-6 w-6" />
+              </Button>
+              <Button variant="outline" size="icon" className="rounded-full border-2 h-12 w-12">
+                  <LinkedinIcon className="h-6 w-6" />
+              </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link href="/login" className="font-semibold text-primary hover:underline">
+              Login
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
+
+      <AlertDialog open={showSubscriptionDialog} onOpenChange={setShowSubscriptionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Subscription Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your account is currently inactive. Please subscribe to access the calculator and other features.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => setShowSubscriptionDialog(false)}>Cancel</Button>
+            <AlertDialogAction onClick={() => {
+              // Handle subscription logic here
+              setShowSubscriptionDialog(false);
+              toast({ title: 'Redirecting to subscription...' });
+            }}>
+              Subscribe Now
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
