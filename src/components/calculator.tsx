@@ -18,16 +18,19 @@ const Calculator = () => {
   const { user } = useUser();
   const db = useDatabase();
   const [shopName, setShopName] = useState('');
+  const [upiId, setUpiId] = useState('');
 
   useEffect(() => {
     if (user && db) {
       const userRef = ref(db, 'users/' + user.uid);
       const unsubscribe = onValue(userRef, (snapshot) => {
         const data = snapshot.val();
-        if (data && data.shopName) {
-          setShopName(data.shopName);
+        if (data) {
+          setShopName(data.shopName || '');
+          setUpiId(data.upiId || '');
         } else {
           setShopName('');
+          setUpiId('');
         }
       });
       return () => unsubscribe();
@@ -134,7 +137,10 @@ const Calculator = () => {
             <span className="sr-only">Toggle theme</span>
           </Button>
         </div>
-        <h1 className="text-xl font-semibold text-center">{shopName}</h1>
+        <div className="text-center">
+            <h1 className="text-xl font-semibold">{shopName}</h1>
+            <p className="text-sm text-muted-foreground">{upiId}</p>
+        </div>
         <div className="w-14 flex justify-end">
           {user ? (
             <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground">
