@@ -22,12 +22,15 @@ const Calculator = () => {
   useEffect(() => {
     if (user && db) {
       const userRef = ref(db, 'users/' + user.uid);
-      onValue(userRef, (snapshot) => {
+      const unsubscribe = onValue(userRef, (snapshot) => {
         const data = snapshot.val();
         if (data && data.shopName) {
           setShopName(data.shopName);
+        } else {
+          setShopName('');
         }
       });
+      return () => unsubscribe();
     }
   }, [user, db]);
 
@@ -140,7 +143,7 @@ const Calculator = () => {
           ) : (
             <Link href="/login">
               <Button variant="ghost" size="icon" className="rounded-full">
-                <User className="h-[1.5rem] w-[1.jsrem]" />
+                <User className="h-[1.5rem] w-[1.5rem]" />
               </Button>
             </Link>
           )}
