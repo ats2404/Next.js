@@ -100,12 +100,6 @@ const Calculator = () => {
   const opActiveClass = `bg-[hsl(var(--btn-operator-active-bg))] text-[hsl(var(--btn-operator-active-fg))] hover:bg-[hsl(var(--btn-operator-active-bg))]`;
   const greyButtonClass = `${buttonClass} bg-[hsl(var(--btn-grey-bg))] text-[hsl(var(--btn-grey-fg))] hover:bg-[hsl(var(--btn-grey-bg))]`;
   const defaultButtonClass = `${buttonClass} bg-[hsl(var(--btn-default-bg))] text-[hsl(var(--btn-default-fg))] hover:bg-[hsl(var(--btn-default-bg))]`;
-
-  const numberButtons = [
-    '7', '8', '9',
-    '4', '5', '6',
-    '1', '2', '3',
-  ];
   
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
@@ -132,10 +126,19 @@ const Calculator = () => {
         <Button onClick={handlePercentClick} className={greyButtonClass}>%</Button>
         <Button onClick={() => handleOperatorClick('÷')} className={`${opButtonClass} ${operator === '÷' && waitingForSecondOperand ? opActiveClass : ''}`}>÷</Button>
         
-        {numberButtons.map(num => <Button key={num} onClick={() => handleNumberClick(num)} className={defaultButtonClass}>{num}</Button>)}
-        
+        <Button onClick={() => handleNumberClick('7')} className={defaultButtonClass}>7</Button>
+        <Button onClick={() => handleNumberClick('8')} className={defaultButtonClass}>8</Button>
+        <Button onClick={() => handleNumberClick('9')} className={defaultButtonClass}>9</Button>
         <Button onClick={() => handleOperatorClick('×')} className={`${opButtonClass} ${operator === '×' && waitingForSecondOperand ? opActiveClass : ''}`}>×</Button>
+
+        <Button onClick={() => handleNumberClick('4')} className={defaultButtonClass}>4</Button>
+        <Button onClick={() => handleNumberClick('5')} className={defaultButtonClass}>5</Button>
+        <Button onClick={() => handleNumberClick('6')} className={defaultButtonClass}>6</Button>
         <Button onClick={() => handleOperatorClick('-')} className={`${opButtonClass} ${operator === '-' && waitingForSecondOperand ? opActiveClass : ''}`}>-</Button>
+
+        <Button onClick={() => handleNumberClick('1')} className={defaultButtonClass}>1</Button>
+        <Button onClick={() => handleNumberClick('2')} className={defaultButtonClass}>2</Button>
+        <Button onClick={() => handleNumberClick('3')} className={defaultButtonClass}>3</Button>
         <Button onClick={() => handleOperatorClick('+')} className={`${opButtonClass} ${operator === '+' && waitingForSecondOperand ? opActiveClass : ''}`}>+</Button>
         
         <Button onClick={() => handleNumberClick('0')} className={`${defaultButtonClass} col-span-2 w-auto`}>0</Button>
