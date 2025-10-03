@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, Delete } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 type Operator = '+' | '-' | '×' | '÷';
@@ -10,94 +10,116 @@ type Operator = '+' | '-' | '×' | '÷';
 const Calculator = () => {
   const { theme, setTheme } = useTheme();
   const [displayValue, setDisplayValue] = useState('0');
-  const [firstOperand, setFirstOperand] = useState<number | null>(null);
-  const [operator, setOperator] = useState<Operator | null>(null);
-  const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
   const [expression, setExpression] = useState('');
 
   const handleNumberClick = (num: string) => {
-    if (waitingForSecondOperand) {
+    if (displayValue === '0') {
       setDisplayValue(num);
-      setWaitingForSecondOperand(false);
     } else {
-      setDisplayValue(displayValue === '0' ? num : displayValue + num);
+      setDisplayValue(displayValue + num);
     }
+    setExpression(prev => prev + num);
   };
 
   const handleOperatorClick = (op: Operator) => {
-    const inputValue = parseFloat(displayValue);
+    if (displayValue === '0' && expression === '') return;
 
-    if (operator && waitingForSecondOperand) {
-      setOperator(op);
-      setExpression(prev => prev.slice(0, -1) + op);
-      return;
+    // Prevent adding an operator if the last part of the expression is already an operator
+    const lastChar = expression.slice(-1);
+    if (['+', '-', '×', '÷'].includes(lastChar)) {
+        setExpression(prev => prev.slice(0, -1) + op);
+    } else {
+        setExpression(prev => prev + op);
     }
-
-    if (firstOperand === null) {
-      setFirstOperand(inputValue);
-    } else if (operator) {
-      const result = calculate(firstOperand, inputValue, operator);
-      setDisplayValue(String(result));
-      setFirstOperand(result);
-    }
-
-    setWaitingForSecondOperand(true);
-    setOperator(op);
-    setExpression(prev => (firstOperand !== null && operator) ? `${calculate(firstOperand, inputValue, operator)} ${op}`: `${inputValue} ${op}`);
+    setDisplayValue('0');
   };
 
   const handleEqualsClick = () => {
-    if (operator && firstOperand !== null) {
-      const secondOperand = parseFloat(displayValue);
-      const result = calculate(firstOperand, secondOperand, operator);
-      setDisplayValue(String(result));
-      setFirstOperand(null);
-      setOperator(null);
-      setWaitingForSecondOperand(false);
-      setExpression(`${firstOperand} ${operator} ${secondOperand} =`);
+    if (expression === '') return;
+
+    try {
+      // Replace '×' with '*' and '÷' with '/' for evaluation
+      const evalExpression = expression.replace(/×/g, '*').replace(/÷/g, '/');
+      
+      // Basic validation to prevent unsafe evaluation
+      if (/[^0-9+\-*/.]/.test(evalExpression)) {
+          throw new Error("Invalid expression");
+      }
+
+      // eslint-disable-next-line no-eval
+      const result = eval(evalExpression);
+      
+      const resultString = String(Number(result.toFixed(6))); // Avoid floating point issues and trailing zeros
+      setExpression(resultString);
+      setDisplayValue(resultString);
+    } catch (e) {
+      setDisplayValue('Error');
+      setExpression('');
     }
   };
 
-  const calculate = (first: number, second: number, op: Operator): number => {
-    switch (op) {
-      case '+':
-        return first + second;
-      case '-':
-        return first - second;
-      case '×':
-        return first * second;
-      case '÷':
-        return first / second;
-      default:
-        return second;
-    }
-  };
 
   const handleClearClick = () => {
     setDisplayValue('0');
-    setFirstOperand(null);
-    setOperator(null);
-    setWaitingForSecondOperand(false);
     setExpression('');
   };
 
   const handleToggleSignClick = () => {
-    setDisplayValue(String(parseFloat(displayValue) * -1));
+    if (displayValue !== '0') {
+      const currentValue = parseFloat(displayValue);
+      const newValue = String(currentValue * -1);
+
+      // Need to replace the tail of the expression
+      const len = displayValue.length;
+      setExpression(prev => prev.substring(0, prev.length - len) + `(${newValue})`);
+      setDisplayValue(newValue);
+    }
   };
 
   const handlePercentClick = () => {
-    setDisplayValue(String(parseFloat(displayValue) / 100));
+    if (displayValue !== '0') {
+        const currentValue = parseFloat(displayValue);
+        const newValue = String(currentValue / 100);
+
+        const len = displayValue.length;
+        setExpression(prev => prev.substring(0, prev.length - len) + newValue);
+        setDisplayValue(newValue);
+    }
   };
 
   const handleDecimalClick = () => {
     if (!displayValue.includes('.')) {
       setDisplayValue(displayValue + '.');
+      setExpression(prev => prev + '.');
+    }
+  };
+
+  const handleBackspaceClick = () => {
+    if (expression.length > 0) {
+      const newExpression = expression.slice(0, -1);
+      setExpression(newExpression);
+
+      // Re-evaluate display
+      const operators = ['+', '-', '×', '÷'];
+      let lastOperatorIndex = -1;
+      for (const op of operators) {
+        lastOperatorIndex = Math.max(lastOperatorIndex, newExpression.lastIndexOf(op));
+      }
+
+      if (lastOperatorIndex === -1) {
+        setDisplayValue(newExpression || '0');
+      } else {
+        setDisplayValue(newExpression.slice(lastOperatorIndex + 1));
+      }
+      
+      if (newExpression === '') {
+        setDisplayValue('0');
+      }
     }
   };
 
   const buttonClass = 'h-20 w-20 rounded-full text-3xl font-medium';
   const opButtonClass = `${buttonClass} bg-[hsl(var(--btn-operator-bg))] text-[hsl(var(--btn-operator-fg))] hover:bg-[hsl(var(--btn-operator-bg))]`;
-  const opActiveClass = `bg-[hsl(var(--btn-operator-active-bg))] text-[hsl(var(--btn-operator-active-fg))] hover:bg-[hsl(var(--btn-operator-active-bg))]`;
   const greyButtonClass = `${buttonClass} bg-[hsl(var(--btn-grey-bg))] text-[hsl(var(--btn-grey-fg))] hover:bg-[hsl(var(--btn-grey-bg))]`;
   const defaultButtonClass = `${buttonClass} bg-[hsl(var(--btn-default-bg))] text-[hsl(var(--btn-default-fg))] hover:bg-[hsl(var(--btn-default-bg))]`;
   
@@ -117,29 +139,29 @@ const Calculator = () => {
         </div>
       </div>
       <div className="w-full text-right pr-6 h-28 flex flex-col justify-end">
-        <div className="text-muted-foreground text-2xl h-8 truncate">{expression}</div>
-        <div className="text-foreground text-7xl font-light truncate">{parseFloat(displayValue).toLocaleString()}</div>
+        <div className="text-muted-foreground text-4xl h-12 truncate">{expression}</div>
+        <div className="text-foreground text-5xl font-light truncate">{parseFloat(displayValue).toLocaleString()}</div>
       </div>
       <div className="grid grid-cols-4 gap-4 p-2">
-        <Button onClick={handleClearClick} className={greyButtonClass}>{displayValue === '0' && expression === '' ? 'AC' : 'C'}</Button>
+        <Button onClick={handleClearClick} className={greyButtonClass}>AC</Button>
         <Button onClick={handleToggleSignClick} className={greyButtonClass}>+/-</Button>
         <Button onClick={handlePercentClick} className={greyButtonClass}>%</Button>
-        <Button onClick={() => handleOperatorClick('÷')} className={`${opButtonClass} ${operator === '÷' && waitingForSecondOperand ? opActiveClass : ''}`}>÷</Button>
+        <Button onClick={() => handleOperatorClick('÷')} className={`${opButtonClass}`}>÷</Button>
         
         <Button onClick={() => handleNumberClick('7')} className={defaultButtonClass}>7</Button>
         <Button onClick={() => handleNumberClick('8')} className={defaultButtonClass}>8</Button>
         <Button onClick={() => handleNumberClick('9')} className={defaultButtonClass}>9</Button>
-        <Button onClick={() => handleOperatorClick('×')} className={`${opButtonClass} ${operator === '×' && waitingForSecondOperand ? opActiveClass : ''}`}>×</Button>
+        <Button onClick={() => handleOperatorClick('×')} className={`${opButtonClass}`}>×</Button>
 
         <Button onClick={() => handleNumberClick('4')} className={defaultButtonClass}>4</Button>
         <Button onClick={() => handleNumberClick('5')} className={defaultButtonClass}>5</Button>
         <Button onClick={() => handleNumberClick('6')} className={defaultButtonClass}>6</Button>
-        <Button onClick={() => handleOperatorClick('-')} className={`${opButtonClass} ${operator === '-' && waitingForSecondOperand ? opActiveClass : ''}`}>-</Button>
+        <Button onClick={() => handleOperatorClick('-')} className={`${opButtonClass}`}>-</Button>
 
         <Button onClick={() => handleNumberClick('1')} className={defaultButtonClass}>1</Button>
         <Button onClick={() => handleNumberClick('2')} className={defaultButtonClass}>2</Button>
         <Button onClick={() => handleNumberClick('3')} className={defaultButtonClass}>3</Button>
-        <Button onClick={() => handleOperatorClick('+')} className={`${opButtonClass} ${operator === '+' && waitingForSecondOperand ? opActiveClass : ''}`}>+</Button>
+        <Button onClick={() => handleOperatorClick('+')} className={`${opButtonClass}`}>+</Button>
         
         <Button onClick={() => handleNumberClick('0')} className={`${defaultButtonClass} col-span-2 w-auto`}>0</Button>
         <Button onClick={handleDecimalClick} className={defaultButtonClass}>.</Button>
