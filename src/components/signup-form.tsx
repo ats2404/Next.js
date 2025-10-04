@@ -81,16 +81,23 @@ export function SignupForm() {
     },
   });
 
-  const writeUserData = (user: FirebaseUser, data: FormValues) => {
+  const writeUserData = async (user: FirebaseUser, data: FormValues) => {
     const status = 'active'; 
 
-    set(ref(db, 'users/' + user.uid), {
-      shopName: data.shopName,
-      email: data.email,
-      mobileNumber: data.mobileNumber,
-      upiId: data.upiId,
-      status: status
-    }).then(() => {
+    try {
+      await set(ref(db, 'users/' + user.uid), {
+        mobileNumber: data.mobileNumber,
+      });
+
+      await set(ref(db, 'mobileUsers/' + data.mobileNumber), {
+        uid: user.uid,
+        shopName: data.shopName,
+        email: data.email,
+        mobileNumber: data.mobileNumber,
+        upiId: data.upiId,
+        status: status
+      });
+
       setIsLoading(false);
       toast({
           title: 'Account Created',
@@ -102,14 +109,14 @@ export function SignupForm() {
       } else {
         setShowSubscriptionDialog(true);
       }
-    }).catch((error) => {
+    } catch (error: any) {
       setIsLoading(false);
       toast({
           variant: 'destructive',
           title: 'Sign-up Failed',
           description: `Could not save user data: ${error.message}`,
       });
-    });
+    }
   }
 
   const handleAuthChange = (user: FirebaseUser | null, data?: FormValues) => {
@@ -321,3 +328,5 @@ export function SignupForm() {
     </>
   );
 }
+
+    

@@ -48,6 +48,7 @@ const Calculator = () => {
   const router = useRouter();
   const { toast } = useToast();
   const [shopName, setShopName] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
   const [upiId, setUpiId] = useState('');
   const [isEditingUpi, setIsEditingUpi] = useState(false);
   const [newUpiId, setNewUpiId] = useState('');
@@ -64,15 +65,25 @@ const Calculator = () => {
       const userRef = ref(db, 'users/' + user.uid);
       const unsubscribe = onValue(userRef, (snapshot) => {
         const data = snapshot.val();
-        if (data) {
-          setShopName(data.shopName || '');
-          setUpiId(data.upiId || '');
-          setNewUpiId(data.upiId || '');
-          setStatus(data.status || 'inactive');
+        if (data && data.mobileNumber) {
+          const userMobileNumber = data.mobileNumber;
+          setMobileNumber(userMobileNumber);
+          const mobileUserRef = ref(db, 'mobileUsers/' + userMobileNumber);
+          const mobileUnsubscribe = onValue(mobileUserRef, (mobileSnapshot) => {
+            const mobileData = mobileSnapshot.val();
+            if (mobileData) {
+              setShopName(mobileData.shopName || '');
+              setUpiId(mobileData.upiId || '');
+              setNewUpiId(mobileData.upiId || '');
+              setStatus(mobileData.status || 'inactive');
+            }
+          });
+          return () => mobileUnsubscribe();
         } else {
           setShopName('');
           setUpiId('');
           setStatus('inactive');
+          setMobileNumber('');
         }
       });
       return () => unsubscribe();
@@ -85,8 +96,8 @@ const Calculator = () => {
   };
 
   const handleUpiUpdate = () => {
-    if (user && db && newUpiId) {
-      const userRef = ref(db, `users/${user.uid}/upiId`);
+    if (mobileNumber && db && newUpiId) {
+      const userRef = ref(db, `mobileUsers/${mobileNumber}/upiId`);
       set(userRef, newUpiId)
         .then(() => {
           toast({ title: "Success", description: "UPI ID updated successfully." });
@@ -445,3 +456,5 @@ const Calculator = () => {
 };
 
 export default Calculator;
+
+    
