@@ -302,7 +302,7 @@ const Calculator = () => {
         </div>
         <div className="text-center">
             <h1 className="text-xl font-semibold">{shopName}</h1>
-            {status === 'active' && (
+            {status === 'active' ? (
               <div className="flex items-center gap-2 justify-center">
                 <p className="text-sm text-muted-foreground">{upiId}</p>
                   <AlertDialog open={isEditingUpi} onOpenChange={setIsEditingUpi}>
@@ -330,6 +330,10 @@ const Calculator = () => {
                     </AlertDialogContent>
                   </AlertDialog>
               </div>
+            ) : (
+                <Button variant="link" className="p-0 h-auto text-primary" onClick={() => setIsSubscriptionDialogVisible(true)}>
+                    Get Subscription
+                </Button>
             )}
         </div>
         <div className="w-14 flex justify-end">
@@ -441,5 +445,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
