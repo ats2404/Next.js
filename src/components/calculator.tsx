@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { LogOut, Moon, Sun, User, Pencil, Share2 } from 'lucide-react';
@@ -28,9 +28,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Input } from './ui/input';
@@ -57,6 +54,7 @@ const Calculator = () => {
   const [isQrCodeVisible, setIsQrCodeVisible] = useState(false);
   const [qrCodeValue, setQrCodeValue] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('0');
+  const qrCodeRef = useRef<HTMLDivElement>(null);
 
 
   useEffect(() => {
@@ -184,10 +182,61 @@ const Calculator = () => {
     }
   };
 
-    const handleShareToWhatsApp = () => {
-    const message = `Please pay ₹${paymentAmount} to ${shopName}.\n\nUPI Link: ${qrCodeValue}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+  const dataUrlToBlob = (dataUrl: string) => {
+    const parts = dataUrl.split(',');
+    const mimeType = parts[0].match(/:(.*?);/)?.[1];
+    const bstr = atob(parts[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mimeType });
+  }
+
+  const handleShare = async () => {
+    if (!qrCodeRef.current) return;
+
+    const svgElement = qrCodeRef.current.querySelector('svg');
+    if (!svgElement) return;
+
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.onload = async () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        const pngDataUrl = canvas.toDataURL('image/png');
+        
+        const text = `Please pay ₹${paymentAmount} to ${shopName}.`;
+
+        try {
+            const blob = dataUrlToBlob(pngDataUrl);
+            const file = new File([blob], 'qrcode.png', { type: 'image/png' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Payment QR Code',
+                    text: text,
+                });
+            } else {
+                 throw new Error("Can't share files on this browser.");
+            }
+        } catch (error) {
+            console.error('Sharing failed:', error);
+            // Fallback for desktop or browsers that can't share files
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text + `\n\nUPI Link: ${qrCodeValue}`)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   const buttonClass = 'h-20 w-20 rounded-full text-3xl font-medium';
@@ -303,7 +352,7 @@ const Calculator = () => {
               <div className="text-center my-6">
                   <span className="text-5xl font-bold">₹{paymentAmount}</span>
               </div>
-              <div className="p-4 bg-white rounded-lg flex items-center justify-center border">
+              <div ref={qrCodeRef} className="p-4 bg-white rounded-lg flex items-center justify-center border">
                   {qrCodeValue && (
                       <QRCode
                           size={256}
@@ -318,9 +367,9 @@ const Calculator = () => {
               </p>
           </div>
           <DialogFooter className="bg-muted p-4">
-              <Button onClick={handleShareToWhatsApp} className="w-full">
+              <Button onClick={handleShare} className="w-full">
                   <Share2 className="mr-2 h-4 w-4" />
-                  Share on WhatsApp
+                  Share Payment Request
               </Button>
           </DialogFooter>
         </DialogContent>
@@ -330,3 +379,5 @@ const Calculator = () => {
 };
 
 export default Calculator;
+
+    
