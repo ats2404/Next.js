@@ -459,7 +459,7 @@ const Calculator = () => {
             </div>
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Pay to:</p>
-              <p className="text-lg font-bold">9860856702@okbizaxis</p>Pad
+              <p className="text-lg font-bold">9860856702@okbizaxis</p>
               <p className="text-sm text-muted-foreground mt-2">
                 Your mobile number <span className="font-semibold">{mobileNumber}</span> will be included in the payment note.
               </p>
@@ -475,5 +475,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
