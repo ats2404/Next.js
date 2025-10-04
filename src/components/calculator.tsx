@@ -138,7 +138,7 @@ const Calculator = () => {
 
       if (upiId && parseFloat(resultString) > 0) {
         setPaymentAmount(resultString);
-        const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(shopName)}&am=${resultString}&cu=INR`;
+        const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(shopName.trim())}&am=${resultString}&cu=INR`;
         setQrCodeValue(upiUrl);
         setIsQrCodeVisible(true);
       }
@@ -185,7 +185,7 @@ const Calculator = () => {
   };
 
     const handleShareToWhatsApp = () => {
-    const message = `Please pay ₹${paymentAmount} to ${shopName} using this UPI link: ${qrCodeValue}`;
+    const message = `Please pay ₹${paymentAmount} to ${shopName}.\n\nUPI Link: ${qrCodeValue}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -294,7 +294,7 @@ const Calculator = () => {
       </div>
 
       <Dialog open={isQrCodeVisible} onOpenChange={setIsQrCodeVisible}>
-      <DialogContent className="sm:max-w-xs p-0">
+        <DialogContent className="sm:max-w-xs p-0">
           <div className="p-6">
               <div className="text-center mb-4">
                   <p className="text-muted-foreground text-sm">Paying to</p>
