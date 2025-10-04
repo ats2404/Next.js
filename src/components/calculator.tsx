@@ -185,7 +185,7 @@ const Calculator = () => {
   };
 
     const handleShareToWhatsApp = () => {
-    const message = `Please pay ₹${paymentAmount} to ${shopName} using this UPI link: ${qrCodeValue}`;
+    const message = `Please pay ₹${paymentAmount} to ${shopName} (${upiId}) using this UPI link: ${qrCodeValue}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -296,13 +296,15 @@ const Calculator = () => {
       <Dialog open={isQrCodeVisible} onOpenChange={setIsQrCodeVisible}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader className="text-center">
-            <DialogTitle>Scan to Pay</DialogTitle>
-            <DialogDescription>
-              Scan the QR code with your UPI app to pay {shopName}.
+            <DialogTitle className="text-2xl font-bold">
+              {shopName}
+            </DialogTitle>
+            <DialogDescription className="font-bold text-lg">
+              {upiId}
             </DialogDescription>
           </DialogHeader>
           <div className="text-center my-4">
-              <span className="text-4xl font-bold">₹{paymentAmount}</span>
+              <span className="text-5xl font-bold">₹{paymentAmount}</span>
             </div>
           <div className="p-4 bg-white rounded-lg flex items-center justify-center">
             {qrCodeValue && (
