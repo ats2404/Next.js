@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { LogOut, Moon, Sun, User, Pencil, Share2 } from 'lucide-react';
+import { LogOut, Moon, Sun, User, Pencil, Share2, X } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useDatabase, useAuth } from '@/firebase';
 import { ref, onValue, set } from 'firebase/database';
@@ -202,6 +202,22 @@ const Calculator = () => {
     }
   };
 
+  const handleBackspaceClick = () => {
+    if (displayValue.length > 1) {
+      const newValue = displayValue.slice(0, -1);
+      setDisplayValue(newValue);
+      setExpression(prev => prev.slice(0, -1));
+    } else {
+      setDisplayValue('0');
+      // A bit tricky to handle expression correctly without more complex logic
+      // For now, we just reset display. A more robust solution might need a proper expression parser.
+      if (expression.length === 1) {
+          setExpression('');
+      }
+    }
+  };
+
+
   const dataUrlToBlob = (dataUrl: string) => {
     const parts = dataUrl.split(',');
     const mimeType = parts[0].match(/:(.*?);/)?.[1];
@@ -371,9 +387,19 @@ const Calculator = () => {
           )}
         </div>
       </div>
-      <div className="w-full text-right pr-6 h-28 flex flex-col justify-end">
+      <div className="relative w-full text-right pr-6 h-28 flex flex-col justify-end">
         <div className="text-muted-foreground text-4xl h-12 truncate">{expression}</div>
         <div className="text-foreground text-5xl font-light truncate">{parseFloat(displayValue).toLocaleString()}</div>
+        {displayValue !== '0' && (
+          <Button
+            onClick={handleBackspaceClick}
+            variant="ghost"
+            size="icon"
+            className="absolute right-4 top-1/2 -translate-y-1/4 h-8 w-8 rounded-full"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
       </div>
       <div className="grid grid-cols-4 gap-4 p-2">
         <Button onClick={handleClearClick} className={greyButtonClass}>AC</Button>
