@@ -225,7 +225,8 @@ const Calculator = () => {
     if (!ctx) return;
   
     const svgString = new XMLSerializer().serializeToString(svgElement);
-    const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
+    const decodedSvg = unescape(encodeURIComponent(svgString));
+    const svgBase64 = btoa(decodedSvg);
     const url = 'data:image/svg+xml;base64,' + svgBase64;
   
     const img = new Image();
@@ -267,8 +268,11 @@ const Calculator = () => {
         if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
             await navigator.share(shareData);
         } else {
-            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-            window.open(whatsappUrl, '_blank');
+           toast({
+              variant: "destructive",
+              title: "Sharing Not Supported",
+              description: "Your browser does not support sharing.",
+            });
         }
 
       } catch (error) {
