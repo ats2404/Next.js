@@ -281,20 +281,15 @@ const Calculator = () => {
             const blob = dataUrlToBlob(pngDataUrl);
             const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
 
-            if (navigator.share) {
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Payment Request',
-                        text: `Please pay ₹${paymentAmount} to ${shopName}.\nUPI ID: ${upiId}`,
-                    });
-                } else {
-                     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-                     window.open(whatsappUrl, '_blank');
-                }
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Payment Request',
+                    text: `Please pay ₹${paymentAmount} to ${shopName}.\nUPI ID: ${upiId}`,
+                });
             } else {
-              const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-              window.open(whatsappUrl, '_blank');
+                 const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+                 window.open(whatsappUrl, '_blank');
             }
         } catch (error) {
             console.error('Sharing failed', error);
