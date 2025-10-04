@@ -55,6 +55,7 @@ const Calculator = () => {
   const [qrCodeValue, setQrCodeValue] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('0');
   const qrCodeRef = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState('inactive');
 
 
   useEffect(() => {
@@ -66,9 +67,11 @@ const Calculator = () => {
           setShopName(data.shopName || '');
           setUpiId(data.upiId || '');
           setNewUpiId(data.upiId || '');
+          setStatus(data.status || 'inactive');
         } else {
           setShopName('');
           setUpiId('');
+          setStatus('inactive');
         }
       });
       return () => unsubscribe();
@@ -134,7 +137,7 @@ const Calculator = () => {
       setExpression(resultString);
       setDisplayValue(resultString);
 
-      if (upiId && parseFloat(resultString) > 0) {
+      if (upiId && parseFloat(resultString) > 0 && status === 'active') {
         setPaymentAmount(resultString);
         const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(shopName.trim())}&am=${resultString}&cu=INR`;
         setQrCodeValue(upiUrl);
@@ -200,60 +203,76 @@ const Calculator = () => {
     const svgElement = qrCodeRef.current.querySelector('svg');
     if (!svgElement) return;
 
-    const svgData = new XMLSerializer().serializeToString(svgElement);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
+    // Create an image from the SVG
+    const svgString = new XMLSerializer().serializeToString(svgElement);
     const img = new Image();
+    
     img.onload = async () => {
-      const qrSize = img.width;
-      const padding = 20;
-      const topMargin = 80;
-      canvas.width = qrSize + (padding * 2);
-      canvas.height = qrSize + topMargin + padding;
+        // Set canvas dimensions
+        const qrSize = img.width;
+        const padding = 20;
+        const topMargin = 80;
+        canvas.width = qrSize + (padding * 2);
+        canvas.height = qrSize + topMargin + padding;
 
-      // Fill background
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Fill background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw Shop Name
-      ctx.fillStyle = 'black';
-      ctx.font = 'bold 24px Poppins, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(shopName, canvas.width / 2, 40);
+        // Draw Shop Name
+        ctx.fillStyle = 'black';
+        ctx.font = 'bold 24px Poppins, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(shopName, canvas.width / 2, 40);
 
-      // Draw Amount
-      ctx.font = 'bold 32px Poppins, sans-serif';
-      ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 80);
+        // Draw Amount
+        ctx.font = 'bold 32px Poppins, sans-serif';
+        ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 80);
 
-      // Draw QR Code
-      ctx.drawImage(img, padding, topMargin);
-      
-      const pngDataUrl = canvas.toDataURL('image/png');
-      const text = `Please pay ₹${paymentAmount} to ${shopName}.`;
+        // Draw QR Code
+        ctx.drawImage(img, padding, topMargin);
+        
+        // Get data URL and share
+        const pngDataUrl = canvas.toDataURL('image/png');
+        const text = `Please pay ₹${paymentAmount} to ${shopName}.`;
+        
+        try {
+            const blob = dataUrlToBlob(pngDataUrl);
+            const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
 
-      try {
-        const blob = dataUrlToBlob(pngDataUrl);
-        const file = new File([blob], 'qrcode.png', { type: 'image/png' });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'Payment QR Code',
-            text: text,
-          });
-        } else {
-          throw new Error("Can't share files on this browser.");
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Payment Request',
+                    text: text,
+                });
+            } else {
+              // Fallback for browsers that don't support file sharing
+              const a = document.createElement('a');
+              a.href = pngDataUrl;
+              a.download = 'payment-qr.png';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              toast({
+                title: "QR Code Downloaded",
+                description: "You can now share the image from your gallery.",
+              });
+            }
+        } catch (error) {
+            console.error('Sharing failed', error);
+            toast({
+              variant: "destructive",
+              title: "Sharing Failed",
+              description: "Could not share the payment request.",
+            });
         }
-      } catch (error) {
-        console.error('Sharing failed:', error);
-        // Fallback for desktop or browsers that can't share files
-        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text + `\n\nUPI Link: ${qrCodeValue}`)}`;
-        window.open(whatsappUrl, '_blank');
-      }
     };
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
   };
 
   const buttonClass = 'h-20 w-20 rounded-full text-3xl font-medium';
@@ -277,33 +296,35 @@ const Calculator = () => {
         </div>
         <div className="text-center">
             <h1 className="text-xl font-semibold">{shopName}</h1>
-            <div className="flex items-center gap-2 justify-center">
-              <p className="text-sm text-muted-foreground">{upiId}</p>
-                <AlertDialog open={isEditingUpi} onOpenChange={setIsEditingUpi}>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                      <Pencil className="h-3 w-3 text-muted-foreground" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Edit UPI ID</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Update your UPI ID below. This will be displayed on your calculator.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <Input 
-                      value={newUpiId}
-                      onChange={(e) => setNewUpiId(e.target.value)}
-                      placeholder="Enter new UPI ID"
-                    />
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleUpiUpdate}>Save</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-            </div>
+            {status === 'active' && (
+              <div className="flex items-center gap-2 justify-center">
+                <p className="text-sm text-muted-foreground">{upiId}</p>
+                  <AlertDialog open={isEditingUpi} onOpenChange={setIsEditingUpi}>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Edit UPI ID</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Update your UPI ID below. This will be displayed on your calculator.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <Input 
+                        value={newUpiId}
+                        onChange={(e) => setNewUpiId(e.target.value)}
+                        placeholder="Enter new UPI ID"
+                      />
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleUpiUpdate}>Save</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+              </div>
+            )}
         </div>
         <div className="w-14 flex justify-end">
           {user ? (
@@ -366,9 +387,6 @@ const Calculator = () => {
                   <p className="text-muted-foreground text-sm">Paying to</p>
                   <p className="font-bold text-lg">{shopName}</p>
               </div>
-              <div className="text-center my-6">
-                  <span className="text-5xl font-bold">₹{paymentAmount}</span>
-              </div>
               <div ref={qrCodeRef} className="p-4 bg-white rounded-lg flex items-center justify-center border">
                   {qrCodeValue && (
                       <QRCode
@@ -378,6 +396,9 @@ const Calculator = () => {
                           viewBox={`0 0 256 256`}
                       />
                   )}
+              </div>
+              <div className="text-center my-6">
+                  <span className="text-5xl font-bold">₹{paymentAmount}</span>
               </div>
               <p className="text-center text-muted-foreground text-xs mt-2">
                 UPI ID: {upiId}
