@@ -439,12 +439,23 @@ const Calculator = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Subscription Required</AlertDialogTitle>
             <AlertDialogDescription>
-              To generate QR codes, a subscription of ₹30 per month is required. Please pay to the UPI ID below to activate your account.
+              To generate QR codes, a subscription of ₹30 per month is required. Please scan the QR code to pay and activate your account.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="my-4 text-center bg-secondary p-4 rounded-lg">
-            <p className="text-sm text-muted-foreground">Pay to:</p>
-            <p className="text-lg font-bold">9860856702@okbizaxis</p>
+          <div className="my-4 flex flex-col items-center justify-center gap-4">
+            <div className="p-4 bg-white rounded-lg border">
+              <QRCode
+                value={`upi://pay?pa=9860856702@okbizaxis&pn=Subscription&am=30&cu=INR&tn=${encodeURIComponent(`Subscription for ${mobileNumber}`)}`}
+                size={200}
+              />
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">Pay to:</p>
+              <p className="text-lg font-bold">9860856702@okbizaxis</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Your mobile number <span className="font-semibold">{mobileNumber}</span> will be included in the payment note.
+              </p>
+            </div>
           </div>
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => setIsSubscriptionDialogVisible(false)}>OK</AlertDialogAction>
@@ -456,5 +467,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
