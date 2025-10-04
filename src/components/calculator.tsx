@@ -219,6 +219,9 @@ const Calculator = () => {
   const dataUrlToBlob = (dataUrl: string) => {
     const parts = dataUrl.split(',');
     const mimeType = parts[0].match(/:(.*?);/)?.[1];
+    if (!mimeType) {
+      throw new Error("Invalid data URL: mimeType not found");
+    }
     const bstr = atob(parts[1]);
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
@@ -230,52 +233,50 @@ const Calculator = () => {
 
   const handleShare = async () => {
     if (!qrCodeRef.current) return;
-  
+
     const svgElement = qrCodeRef.current.querySelector('svg');
     if (!svgElement) return;
-  
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-  
+
     const svgString = new XMLSerializer().serializeToString(svgElement);
-    const svgBlob = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
-    const url = URL.createObjectURL(svgBlob);
-    
+    const url = 'data:image/svg+xml;base64,' + btoa(svgString);
+
     const img = new Image();
     img.onload = async () => {
       // Set canvas dimensions with padding and space for text
-      const qrSize = 256; // Use a fixed size for the QR code in the image
+      const qrSize = 256;
       const padding = 40;
       const topMargin = 120;
       const bottomMargin = 40;
       canvas.width = qrSize + (padding * 2);
       canvas.height = qrSize + topMargin + bottomMargin;
-  
+
       // White background
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
+
       // Shop Name
       ctx.fillStyle = 'black';
       ctx.font = 'bold 32px Poppins, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(shopName, canvas.width / 2, 60);
-  
+
       // Payment Amount
       ctx.font = 'bold 48px Poppins, sans-serif';
       ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 110);
-  
+
       // Draw QR code image
       ctx.drawImage(img, padding, topMargin, qrSize, qrSize);
-      URL.revokeObjectURL(url);
-  
+
       const pngDataUrl = canvas.toDataURL('image/png');
-  
+
       try {
         const blob = dataUrlToBlob(pngDataUrl);
         const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
-  
+
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
@@ -298,7 +299,6 @@ const Calculator = () => {
       }
     };
     img.onerror = () => {
-        URL.revokeObjectURL(url);
         toast({
           variant: "destructive",
           title: "Image Creation Failed",
