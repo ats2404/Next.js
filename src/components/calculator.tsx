@@ -9,12 +9,6 @@ import { useUser, useDatabase, useAuth } from '@/firebase';
 import { ref, onValue, set } from 'firebase/database';
 import QRCode from "react-qr-code";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -32,7 +26,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 
@@ -286,15 +279,10 @@ const Calculator = () => {
                     title: 'Payment Request'
                 });
             } else {
-                const a = document.createElement('a');
-                a.href = pngDataUrl;
-                a.download = 'payment-qr.png';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
                 toast({
-                    title: "Image downloaded",
-                    description: "QR code image saved. You can share it from your gallery.",
+                    variant: "destructive",
+                    title: "Sharing Not Supported",
+                    description: "Your browser does not support sharing.",
                 });
             }
         } catch (error) {
@@ -302,7 +290,7 @@ const Calculator = () => {
             toast({
                 variant: "destructive",
                 title: "Sharing Failed",
-                description: "Could not share the QR code. Please try downloading it.",
+                description: "Could not share the QR code.",
             });
         }
     };
@@ -475,5 +463,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
