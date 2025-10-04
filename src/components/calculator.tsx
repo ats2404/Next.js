@@ -230,71 +230,70 @@ const Calculator = () => {
 
   const handleShare = async () => {
     if (!qrCodeRef.current) return;
-
+  
     const svgElement = qrCodeRef.current.querySelector('svg');
     if (!svgElement) return;
-
+  
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+  
     const svgString = new XMLSerializer().serializeToString(svgElement);
     const img = new Image();
-    
+  
     img.onload = async () => {
-        // Set canvas dimensions with padding and space for text
-        const qrSize = 256; // Use a fixed size for the QR code in the image
-        const padding = 40;
-        const topMargin = 120;
-        const bottomMargin = 40;
-        canvas.width = qrSize + (padding * 2);
-        canvas.height = qrSize + topMargin + bottomMargin;
-
-        // White background
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Shop Name
-        ctx.fillStyle = 'black';
-        ctx.font = 'bold 32px Poppins, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(shopName, canvas.width / 2, 60);
-
-        // Payment Amount
-        ctx.font = 'bold 48px Poppins, sans-serif';
-        ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 110);
-
-        // Draw QR code image
-        ctx.drawImage(img, padding, topMargin, qrSize, qrSize);
-        
-        const pngDataUrl = canvas.toDataURL('image/png');
-                
-        try {
-            const blob = dataUrlToBlob(pngDataUrl);
-            const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
-
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Payment Request'
-                });
-            } else {
-                toast({
-                    variant: "destructive",
-                    title: "Sharing Not Supported",
-                    description: "Your browser does not support sharing.",
-                });
-            }
-        } catch (error) {
-            console.error('Sharing failed', error);
-            toast({
-                variant: "destructive",
-                title: "Sharing Failed",
-                description: "Could not share the QR code.",
-            });
+      // Set canvas dimensions with padding and space for text
+      const qrSize = 256; // Use a fixed size for the QR code in the image
+      const padding = 40;
+      const topMargin = 120;
+      const bottomMargin = 40;
+      canvas.width = qrSize + (padding * 2);
+      canvas.height = qrSize + topMargin + bottomMargin;
+  
+      // White background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+      // Shop Name
+      ctx.fillStyle = 'black';
+      ctx.font = 'bold 32px Poppins, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(shopName, canvas.width / 2, 60);
+  
+      // Payment Amount
+      ctx.font = 'bold 48px Poppins, sans-serif';
+      ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 110);
+  
+      // Draw QR code image
+      ctx.drawImage(img, padding, topMargin, qrSize, qrSize);
+  
+      const pngDataUrl = canvas.toDataURL('image/png');
+  
+      try {
+        const blob = dataUrlToBlob(pngDataUrl);
+        const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
+  
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Payment Request',
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Sharing Not Supported",
+            description: "Your browser does not support sharing files.",
+          });
         }
+      } catch (error) {
+        console.error('Sharing failed', error);
+        toast({
+          variant: "destructive",
+          title: "Sharing Failed",
+          description: "Could not share the QR code.",
+        });
+      }
     };
-    // Use unescape and encodeURIComponent to handle potential special characters in SVG
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
   };
 
