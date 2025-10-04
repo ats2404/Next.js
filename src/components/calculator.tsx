@@ -400,16 +400,6 @@ const Calculator = () => {
       <div className="relative w-full text-right pr-6 h-28 flex flex-col justify-end">
         <div className="text-muted-foreground text-4xl h-12 truncate">{expression}</div>
         <div className="text-foreground text-5xl font-light truncate">{parseFloat(displayValue).toLocaleString()}</div>
-        {displayValue !== '0' && (
-          <Button
-            onClick={handleBackspaceClick}
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-1/2 -translate-y-1/4 h-10 w-10 rounded-full"
-          >
-            <Delete className="h-6 w-6" />
-          </Button>
-        )}
       </div>
       <div className="grid grid-cols-4 gap-4 p-2">
         <Button onClick={handleClearClick} className={greyButtonClass}>AC</Button>
