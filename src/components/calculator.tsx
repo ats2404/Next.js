@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { LogOut, Moon, Sun, User, Pencil, Share2, Delete } from 'lucide-react';
+import { Moon, Sun, User, Pencil, Share2, Delete } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useDatabase, useAuth } from '@/firebase';
 import { ref, onValue, set } from 'firebase/database';
@@ -89,11 +89,6 @@ const Calculator = () => {
       return () => unsubscribe();
     }
   }, [user, db]);
-
-  const handleLogout = () => {
-    signOut(auth);
-    router.push('/login');
-  };
 
   const handleUpiUpdate = () => {
     if (mobileNumber && db && newUpiId) {
@@ -364,19 +359,9 @@ const Calculator = () => {
         </div>
         <div className="w-14 flex justify-end">
           {user ? (
-             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <User className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <User className="h-5 w-5" />
+            </Button>
           ) : (
             <Link href="/login">
               <Button variant="ghost" size="icon" className="rounded-full">
