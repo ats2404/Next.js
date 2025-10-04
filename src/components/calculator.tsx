@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { LogOut, Moon, Sun, User, Pencil } from 'lucide-react';
+import { LogOut, Moon, Sun, User, Pencil, Share2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useDatabase, useAuth } from '@/firebase';
 import { ref, onValue, set } from 'firebase/database';
@@ -31,6 +31,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -183,6 +184,12 @@ const Calculator = () => {
     }
   };
 
+    const handleShareToWhatsApp = () => {
+    const message = `Please pay ₹${paymentAmount} to ${shopName} using this UPI link: ${qrCodeValue}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   const buttonClass = 'h-20 w-20 rounded-full text-3xl font-medium';
   const opButtonClass = `${buttonClass} bg-[hsl(var(--btn-operator-bg))] text-[hsl(var(--btn-operator-fg))] hover:bg-[hsl(var(--btn-operator-bg))]`;
   const greyButtonClass = `${buttonClass} bg-[hsl(var(--btn-grey-bg))] text-[hsl(var(--btn-grey-fg))] hover:bg-[hsl(var(--btn-grey-bg))]`;
@@ -286,14 +293,17 @@ const Calculator = () => {
         <Button onClick={handleEqualsClick} className={opButtonClass}>=</Button>
       </div>
 
-       <Dialog open={isQrCodeVisible} onOpenChange={setIsQrCodeVisible}>
+      <Dialog open={isQrCodeVisible} onOpenChange={setIsQrCodeVisible}>
         <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
+          <DialogHeader className="text-center">
             <DialogTitle>Scan to Pay</DialogTitle>
             <DialogDescription>
-              Scan the QR code with your UPI app to pay ₹{paymentAmount} to {shopName}.
+              Scan the QR code with your UPI app to pay {shopName}.
             </DialogDescription>
           </DialogHeader>
+          <div className="text-center my-4">
+              <span className="text-4xl font-bold">₹{paymentAmount}</span>
+            </div>
           <div className="p-4 bg-white rounded-lg flex items-center justify-center">
             {qrCodeValue && (
               <QRCode
@@ -304,6 +314,12 @@ const Calculator = () => {
               />
             )}
           </div>
+          <DialogFooter>
+            <Button onClick={handleShareToWhatsApp} className="w-full">
+              <Share2 className="mr-2 h-4 w-4" />
+              Share on WhatsApp
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
