@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { LogOut, Moon, Sun, User, Pencil, Share2, X } from 'lucide-react';
+import { LogOut, Moon, Sun, User, Pencil, Share2, Backspace } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useDatabase, useAuth } from '@/firebase';
 import { ref, onValue, set } from 'firebase/database';
@@ -407,7 +407,7 @@ const Calculator = () => {
             size="icon"
             className="absolute right-4 top-1/2 -translate-y-1/4 h-8 w-8 rounded-full"
           >
-            <X className="h-5 w-5" />
+            <Backspace className="h-5 w-5" />
           </Button>
         )}
       </div>
@@ -503,3 +503,5 @@ const Calculator = () => {
 };
 
 export default Calculator;
+
+    
