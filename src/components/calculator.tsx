@@ -185,7 +185,7 @@ const Calculator = () => {
   };
 
     const handleShareToWhatsApp = () => {
-    const message = `Please pay ₹${paymentAmount} to ${shopName} (${upiId}) using this UPI link: ${qrCodeValue}`;
+    const message = `Please pay ₹${paymentAmount} to ${shopName} using this UPI link: ${qrCodeValue}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -294,33 +294,34 @@ const Calculator = () => {
       </div>
 
       <Dialog open={isQrCodeVisible} onOpenChange={setIsQrCodeVisible}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader className="text-center">
-            <DialogTitle className="text-2xl font-bold">
-              {shopName}
-            </DialogTitle>
-            <DialogDescription className="font-bold text-lg">
-              {upiId}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="text-center my-4">
-              <span className="text-5xl font-bold">₹{paymentAmount}</span>
-            </div>
-          <div className="p-4 bg-white rounded-lg flex items-center justify-center">
-            {qrCodeValue && (
-              <QRCode
-                size={256}
-                style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                value={qrCodeValue}
-                viewBox={`0 0 256 256`}
-              />
-            )}
+      <DialogContent className="sm:max-w-xs p-0">
+          <div className="p-6">
+              <div className="text-center mb-4">
+                  <p className="text-muted-foreground text-sm">Paying to</p>
+                  <p className="font-bold text-lg">{shopName}</p>
+              </div>
+              <div className="text-center my-6">
+                  <span className="text-5xl font-bold">₹{paymentAmount}</span>
+              </div>
+              <div className="p-4 bg-white rounded-lg flex items-center justify-center border">
+                  {qrCodeValue && (
+                      <QRCode
+                          size={256}
+                          style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                          value={qrCodeValue}
+                          viewBox={`0 0 256 256`}
+                      />
+                  )}
+              </div>
+              <p className="text-center text-muted-foreground text-xs mt-2">
+                UPI ID: {upiId}
+              </p>
           </div>
-          <DialogFooter>
-            <Button onClick={handleShareToWhatsApp} className="w-full">
-              <Share2 className="mr-2 h-4 w-4" />
-              Share on WhatsApp
-            </Button>
+          <DialogFooter className="bg-muted p-4">
+              <Button onClick={handleShareToWhatsApp} className="w-full">
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Share on WhatsApp
+              </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
