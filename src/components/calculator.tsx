@@ -252,23 +252,25 @@ const Calculator = () => {
       ctx.drawImage(img, padding, topMargin, qrSize, qrSize);
   
       const pngDataUrl = canvas.toDataURL('image/png');
+      const text = `Payment request for ₹${paymentAmount} to ${shopName}. UPI ID: ${upiId}`;
   
       try {
         const blob = await (await fetch(pngDataUrl)).blob();
         const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
-  
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'Payment Request',
-          });
+        
+        const shareData = {
+          files: [file],
+          title: 'Payment Request',
+          text: text,
+        };
+
+        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+            await navigator.share(shareData);
         } else {
-          toast({
-            variant: "destructive",
-            title: "Sharing Not Supported",
-            description: "Your browser does not support sharing files.",
-          });
+            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+            window.open(whatsappUrl, '_blank');
         }
+
       } catch (error) {
         console.error('Sharing failed', error);
         toast({
