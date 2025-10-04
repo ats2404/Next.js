@@ -250,69 +250,56 @@ const Calculator = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Create an image from the SVG
     const svgString = new XMLSerializer().serializeToString(svgElement);
     const img = new Image();
     
     img.onload = async () => {
-        // Set canvas dimensions
         const qrSize = img.width;
         const padding = 20;
         const topMargin = 80;
         canvas.width = qrSize + (padding * 2);
         canvas.height = qrSize + topMargin + padding;
 
-        // Fill background
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw Shop Name
         ctx.fillStyle = 'black';
         ctx.font = 'bold 24px Poppins, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(shopName, canvas.width / 2, 40);
 
-        // Draw Amount
         ctx.font = 'bold 32px Poppins, sans-serif';
         ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 80);
 
-        // Draw QR Code
         ctx.drawImage(img, padding, topMargin);
         
-        // Get data URL and share
         const pngDataUrl = canvas.toDataURL('image/png');
-        const text = `Please pay ₹${paymentAmount} to ${shopName}.`;
+        
+        const text = `Please pay ₹${paymentAmount} to ${shopName}.\nUPI ID: ${upiId}\n\nOr scan the QR code below:`;
         
         try {
             const blob = dataUrlToBlob(pngDataUrl);
             const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
 
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Payment Request',
-                    text: text,
-                });
+            if (navigator.share) {
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Payment Request',
+                        text: `Please pay ₹${paymentAmount} to ${shopName}.\nUPI ID: ${upiId}`,
+                    });
+                } else {
+                     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+                     window.open(whatsappUrl, '_blank');
+                }
             } else {
-              // Fallback for browsers that don't support file sharing
-              const a = document.createElement('a');
-              a.href = pngDataUrl;
-              a.download = 'payment-qr.png';
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              toast({
-                title: "QR Code Downloaded",
-                description: "You can now share the image from your gallery.",
-              });
+              const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+              window.open(whatsappUrl, '_blank');
             }
         } catch (error) {
             console.error('Sharing failed', error);
-            toast({
-              variant: "destructive",
-              title: "Sharing Failed",
-              description: "Could not share the payment request.",
-            });
+            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+            window.open(whatsappUrl, '_blank');
         }
     };
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
