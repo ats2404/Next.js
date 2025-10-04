@@ -204,37 +204,54 @@ const Calculator = () => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
+    
     const img = new Image();
     img.onload = async () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-        const pngDataUrl = canvas.toDataURL('image/png');
-        
-        const text = `Please pay ₹${paymentAmount} to ${shopName}.`;
+      const qrSize = img.width;
+      const padding = 20;
+      const topMargin = 80;
+      canvas.width = qrSize + (padding * 2);
+      canvas.height = qrSize + topMargin + padding;
 
-        try {
-            const blob = dataUrlToBlob(pngDataUrl);
-            const file = new File([blob], 'qrcode.png', { type: 'image/png' });
+      // Fill background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Payment QR Code',
-                    text: text,
-                });
-            } else {
-                 throw new Error("Can't share files on this browser.");
-            }
-        } catch (error) {
-            console.error('Sharing failed:', error);
-            // Fallback for desktop or browsers that can't share files
-            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text + `\n\nUPI Link: ${qrCodeValue}`)}`;
-            window.open(whatsappUrl, '_blank');
+      // Draw Shop Name
+      ctx.fillStyle = 'black';
+      ctx.font = 'bold 24px Poppins, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(shopName, canvas.width / 2, 40);
+
+      // Draw Amount
+      ctx.font = 'bold 32px Poppins, sans-serif';
+      ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 80);
+
+      // Draw QR Code
+      ctx.drawImage(img, padding, topMargin);
+      
+      const pngDataUrl = canvas.toDataURL('image/png');
+      const text = `Please pay ₹${paymentAmount} to ${shopName}.`;
+
+      try {
+        const blob = dataUrlToBlob(pngDataUrl);
+        const file = new File([blob], 'qrcode.png', { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Payment QR Code',
+            text: text,
+          });
+        } else {
+          throw new Error("Can't share files on this browser.");
         }
+      } catch (error) {
+        console.error('Sharing failed:', error);
+        // Fallback for desktop or browsers that can't share files
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text + `\n\nUPI Link: ${qrCodeValue}`)}`;
+        window.open(whatsappUrl, '_blank');
+      }
     };
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
@@ -379,5 +396,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
