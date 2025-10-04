@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { Button } from './ui/button';
 import { Moon, Sun, User, Pencil, Share2, Delete } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useUser, useDatabase, useAuth } from '@/firebase';
-import { ref, onValue, set } from 'firebase/database';
+import { useUser, useAuth } from '@/firebase';
+import { getDatabase, ref, onValue, set } from 'firebase/database';
 import QRCode from "react-qr-code";
 import {
   AlertDialog,
@@ -36,7 +35,6 @@ const Calculator = () => {
   const [displayValue, setDisplayValue] = useState('0');
   const [expression, setExpression] = useState('');
   const { user } = useUser();
-  const db = useDatabase();
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -51,6 +49,7 @@ const Calculator = () => {
   const [paymentAmount, setPaymentAmount] = useState('0');
   const qrCodeRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState('inactive');
+  const db = getDatabase();
 
 
   useEffect(() => {
@@ -215,22 +214,6 @@ const Calculator = () => {
     }
   };
 
-
-  const dataUrlToBlob = (dataUrl: string) => {
-    const parts = dataUrl.split(',');
-    const mimeType = parts[0].match(/:(.*?);/)?.[1];
-    if (!mimeType) {
-      throw new Error("Invalid data URL: mimeType not found");
-    }
-    const bstr = atob(parts[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], { type: mimeType });
-  }
-
   const handleShare = async () => {
     if (!qrCodeRef.current) return;
   
@@ -241,37 +224,31 @@ const Calculator = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
   
-    // Use a library or a robust method to serialize SVG to string
     const svgString = new XMLSerializer().serializeToString(svgElement);
-    // Use btoa for Base64 encoding. The SVG string must be properly escaped.
     const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
     const url = 'data:image/svg+xml;base64,' + svgBase64;
   
     const img = new Image();
     img.onload = async () => {
-      // Set canvas dimensions with padding and space for text
       const qrSize = 256;
-      const padding = 40;
-      const topMargin = 120;
-      const bottomMargin = 40;
+      const padding = 20;
+      const topMargin = 80;
+      const bottomMargin = 20;
+
       canvas.width = qrSize + (padding * 2);
       canvas.height = qrSize + topMargin + bottomMargin;
   
-      // White background
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-      // Shop Name
       ctx.fillStyle = 'black';
-      ctx.font = 'bold 32px Poppins, sans-serif';
+      ctx.font = 'bold 24px Poppins, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(shopName, canvas.width / 2, 60);
+      ctx.fillText(shopName, canvas.width / 2, 40);
   
-      // Payment Amount
-      ctx.font = 'bold 48px Poppins, sans-serif';
-      ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 110);
+      ctx.font = 'bold 36px Poppins, sans-serif';
+      ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 80);
   
-      // Draw QR code image
       ctx.drawImage(img, padding, topMargin, qrSize, qrSize);
   
       const pngDataUrl = canvas.toDataURL('image/png');
@@ -368,7 +345,7 @@ const Calculator = () => {
             )}
         </div>
         <div className="w-14 flex justify-end">
-          <Button variant="ghost" size="icon" className="rounded-full">
+           <Button variant="ghost" size="icon" className="rounded-full">
             <User className="h-5 w-5" />
           </Button>
         </div>
@@ -469,5 +446,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
