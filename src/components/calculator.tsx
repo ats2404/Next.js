@@ -275,9 +275,7 @@ const Calculator = () => {
         ctx.drawImage(img, padding, topMargin, qrSize, qrSize);
         
         const pngDataUrl = canvas.toDataURL('image/png');
-        
-        const text = `Please pay ₹${paymentAmount} to ${shopName}.\nUPI ID: ${upiId}`;
-        
+                
         try {
             const blob = dataUrlToBlob(pngDataUrl);
             const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
@@ -285,17 +283,27 @@ const Calculator = () => {
             if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({
                     files: [file],
-                    title: 'Payment Request',
-                    text: text,
+                    title: 'Payment Request'
                 });
             } else {
-                 const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-                 window.open(whatsappUrl, '_blank');
+                const a = document.createElement('a');
+                a.href = pngDataUrl;
+                a.download = 'payment-qr.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                toast({
+                    title: "Image downloaded",
+                    description: "QR code image saved. You can share it from your gallery.",
+                });
             }
         } catch (error) {
             console.error('Sharing failed', error);
-            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-            window.open(whatsappUrl, '_blank');
+            toast({
+                variant: "destructive",
+                title: "Sharing Failed",
+                description: "Could not share the QR code. Please try downloading it.",
+            });
         }
     };
     // Use unescape and encodeURIComponent to handle potential special characters in SVG
@@ -467,3 +475,5 @@ const Calculator = () => {
 };
 
 export default Calculator;
+
+    
