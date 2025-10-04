@@ -405,9 +405,9 @@ const Calculator = () => {
             onClick={handleBackspaceClick}
             variant="ghost"
             size="icon"
-            className="absolute right-4 top-1/2 -translate-y-1/4 h-8 w-8 rounded-full"
+            className="absolute right-4 top-1/2 -translate-y-1/4 h-10 w-10 rounded-full"
           >
-            <Delete className="h-5 w-5" />
+            <Delete className="h-6 w-6" />
           </Button>
         )}
       </div>
@@ -503,5 +503,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
