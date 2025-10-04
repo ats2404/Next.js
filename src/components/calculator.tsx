@@ -405,7 +405,7 @@ const Calculator = () => {
         <Button onClick={handleClearClick} className={greyButtonClass}>AC</Button>
         <Button onClick={handleToggleSignClick} className={greyButtonClass}>+/-</Button>
         <Button onClick={handlePercentClick} className={greyButtonClass}>%</Button>
-        <Button onClick={() => handleOperatorClick('÷')} className={`${opButtonClass}`}>÷</Button>
+        <Button onClick={handleBackspaceClick} className={opButtonClass}><Delete /></Button>
         
         <Button onClick={() => handleNumberClick('7')} className={defaultButtonClass}>7</Button>
         <Button onClick={() => handleNumberClick('8')} className={defaultButtonClass}>8</Button>
@@ -493,3 +493,5 @@ const Calculator = () => {
 };
 
 export default Calculator;
+
+    
