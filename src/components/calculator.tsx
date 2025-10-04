@@ -209,10 +209,20 @@ const Calculator = () => {
       setExpression(prev => prev.slice(0, -1));
     } else {
       setDisplayValue('0');
-      // A bit tricky to handle expression correctly without more complex logic
-      // For now, we just reset display. A more robust solution might need a proper expression parser.
-      if (expression.length === 1) {
+      if (expression.length <= 1) {
           setExpression('');
+      } else {
+          // This part is tricky. A simple slice might not work for complex expressions.
+          // For now, we reset if expression is a single number.
+          const lastOpIndex = Math.max(expression.lastIndexOf('+'), expression.lastIndexOf('-'), expression.lastIndexOf('×'), expression.lastIndexOf('÷'));
+          if (lastOpIndex === -1) {
+             setExpression(prev => prev.slice(0, -1));
+          } else if (expression.length - 1 === lastOpIndex) {
+             // do nothing, we are at an operator
+          }
+          else {
+            setExpression(prev => prev.slice(0, -1));
+          }
       }
     }
   };
@@ -493,5 +503,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
