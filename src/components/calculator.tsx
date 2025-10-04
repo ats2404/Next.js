@@ -275,7 +275,7 @@ const Calculator = () => {
         
         const pngDataUrl = canvas.toDataURL('image/png');
         
-        const text = `Please pay ₹${paymentAmount} to ${shopName}.\nUPI ID: ${upiId}\n\nOr scan the QR code below:`;
+        const text = `Please pay ₹${paymentAmount} to ${shopName}.\nUPI ID: ${upiId}`;
         
         try {
             const blob = dataUrlToBlob(pngDataUrl);
@@ -285,7 +285,7 @@ const Calculator = () => {
                 await navigator.share({
                     files: [file],
                     title: 'Payment Request',
-                    text: `Please pay ₹${paymentAmount} to ${shopName}.\nUPI ID: ${upiId}`,
+                    text: text,
                 });
             } else {
                  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
