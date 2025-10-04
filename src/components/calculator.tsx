@@ -239,8 +239,10 @@ const Calculator = () => {
     if (!ctx) return;
   
     const svgString = new XMLSerializer().serializeToString(svgElement);
+    const svgBlob = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
+    const url = URL.createObjectURL(svgBlob);
+    
     const img = new Image();
-  
     img.onload = async () => {
       // Set canvas dimensions with padding and space for text
       const qrSize = 256; // Use a fixed size for the QR code in the image
@@ -266,6 +268,7 @@ const Calculator = () => {
   
       // Draw QR code image
       ctx.drawImage(img, padding, topMargin, qrSize, qrSize);
+      URL.revokeObjectURL(url);
   
       const pngDataUrl = canvas.toDataURL('image/png');
   
@@ -294,7 +297,15 @@ const Calculator = () => {
         });
       }
     };
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+    img.onerror = () => {
+        URL.revokeObjectURL(url);
+        toast({
+          variant: "destructive",
+          title: "Image Creation Failed",
+          description: "Could not create QR code image for sharing.",
+        });
+    };
+    img.src = url;
   };
 
   const buttonClass = 'h-20 w-20 rounded-full text-3xl font-medium';
@@ -353,17 +364,9 @@ const Calculator = () => {
             )}
         </div>
         <div className="w-14 flex justify-end">
-          {user ? (
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <User className="h-5 w-5" />
-            </Button>
-          ) : (
-            <Link href="/login">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <User className="h-[1.5rem] w-[1.5rem]" />
-              </Button>
-            </Link>
-          )}
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <User className="h-5 w-5" />
+          </Button>
         </div>
       </div>
       <div className="relative w-full text-right pr-6 h-28 flex flex-col justify-end">
