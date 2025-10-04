@@ -254,24 +254,30 @@ const Calculator = () => {
     const img = new Image();
     
     img.onload = async () => {
-        const qrSize = img.width;
-        const padding = 20;
-        const topMargin = 80;
+        // Set canvas dimensions with padding and space for text
+        const qrSize = 256; // Use a fixed size for the QR code in the image
+        const padding = 40;
+        const topMargin = 120;
+        const bottomMargin = 40;
         canvas.width = qrSize + (padding * 2);
-        canvas.height = qrSize + topMargin + padding;
+        canvas.height = qrSize + topMargin + bottomMargin;
 
+        // White background
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Shop Name
         ctx.fillStyle = 'black';
-        ctx.font = 'bold 24px Poppins, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(shopName, canvas.width / 2, 40);
-
         ctx.font = 'bold 32px Poppins, sans-serif';
-        ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 80);
+        ctx.textAlign = 'center';
+        ctx.fillText(shopName, canvas.width / 2, 60);
 
-        ctx.drawImage(img, padding, topMargin);
+        // Payment Amount
+        ctx.font = 'bold 48px Poppins, sans-serif';
+        ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 110);
+
+        // Draw QR code image
+        ctx.drawImage(img, padding, topMargin, qrSize, qrSize);
         
         const pngDataUrl = canvas.toDataURL('image/png');
         
@@ -297,6 +303,7 @@ const Calculator = () => {
             window.open(whatsappUrl, '_blank');
         }
     };
+    // Use unescape and encodeURIComponent to handle potential special characters in SVG
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
   };
 
