@@ -52,6 +52,7 @@ const Calculator = () => {
   const [isEditingUpi, setIsEditingUpi] = useState(false);
   const [newUpiId, setNewUpiId] = useState('');
   const [isQrCodeVisible, setIsQrCodeVisible] = useState(false);
+  const [isSubscriptionDialogVisible, setIsSubscriptionDialogVisible] = useState(false);
   const [qrCodeValue, setQrCodeValue] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('0');
   const qrCodeRef = useRef<HTMLDivElement>(null);
@@ -136,6 +137,11 @@ const Calculator = () => {
       const resultString = String(Number(result.toFixed(2)));
       setExpression(resultString);
       setDisplayValue(resultString);
+
+      if (status === 'inactive') {
+        setIsSubscriptionDialogVisible(true);
+        return;
+      }
 
       if (upiId && parseFloat(resultString) > 0 && status === 'active') {
         setPaymentAmount(resultString);
@@ -412,8 +418,28 @@ const Calculator = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isSubscriptionDialogVisible} onOpenChange={setIsSubscriptionDialogVisible}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Subscription Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              To generate QR codes, a subscription of ₹30 per month is required. Please pay to the UPI ID below to activate your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4 text-center bg-secondary p-4 rounded-lg">
+            <p className="text-sm text-muted-foreground">Pay to:</p>
+            <p className="text-lg font-bold">9860856702@okbizaxis</p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setIsSubscriptionDialogVisible(false)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
 
 export default Calculator;
+
+    
