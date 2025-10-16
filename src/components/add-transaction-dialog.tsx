@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUser, useDatabase } from '@/firebase';
-import { ref, push, set, serverTimestamp } from 'firebase/database';
+import { ref, push, set, serverTimestamp, get, child } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,7 +17,7 @@ import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useRecognition } from '@/hooks/use-recognition';
-import { Mic } from 'lucide-react';
+import { Mic, Phone } from 'lucide-react';
 
 interface AddTransactionDialogProps {
   isOpen: boolean;
@@ -39,6 +39,7 @@ export function AddTransactionDialog({
   const { toast } = useToast();
 
   const [customerName, setCustomerName] = useState(defaultCustomerName);
+  const [mobileNumber, setMobileNumber] = useState('');
   const [productName, setProductName] = useState('');
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionType, setTransactionType] = useState<'credit' | 'debit'>(defaultTransactionType);
@@ -50,6 +51,7 @@ export function AddTransactionDialog({
       // Reset other fields
       setProductName('');
       setTransactionAmount('');
+      setMobileNumber('');
     }
   }, [isOpen, defaultCustomerName, defaultTransactionType]);
 
@@ -67,38 +69,52 @@ export function AddTransactionDialog({
     },
   });
 
-  const handleSaveTransaction = () => {
+  const handleSaveTransaction = async () => {
     if (!user || !db) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save transactions.' });
       return;
     }
 
-    if (!customerName || !productName || !transactionAmount) {
+    if (!customerName || !productName || !transactionAmount || (!defaultCustomerName && !mobileNumber)) {
       toast({ variant: 'destructive', title: 'Error', description: 'Please fill all fields.' });
       return;
     }
 
-    const transactionsRef = ref(db, `khata/${user.uid}`);
-    const newTransactionRef = push(transactionsRef);
+    const transactionsRef = ref(db, `khata/${user.uid}/transactions`);
+    const customersRef = ref(db, `khata/${user.uid}/customers`);
+    
+    try {
+        if (!defaultCustomerName) {
+            // New customer, check if they exist
+            const snapshot = await get(child(customersRef, customerName));
+            if (!snapshot.exists()) {
+                await set(child(customersRef, customerName), {
+                    name: customerName,
+                    mobileNumber: mobileNumber,
+                });
+            }
+        }
+        
+        const newTransactionRef = push(transactionsRef);
+        await set(newTransactionRef, {
+          customerName,
+          productName,
+          amount: parseFloat(transactionAmount),
+          type: transactionType,
+          timestamp: serverTimestamp(),
+        });
 
-    set(newTransactionRef, {
-      customerName,
-      productName,
-      amount: parseFloat(transactionAmount),
-      type: transactionType,
-      timestamp: serverTimestamp(),
-    })
-      .then(() => {
         toast({ title: 'Success', description: 'Transaction saved successfully.' });
         onOpenChange(false);
         if (onTransactionSave) {
             onTransactionSave();
         }
-      })
-      .catch((error) => {
+
+    } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: `Failed to save transaction: ${error.message}` });
-      });
+    }
   };
+
 
   const handleMicClick = () => {
     if (!isSupported) {
@@ -139,6 +155,24 @@ export function AddTransactionDialog({
               readOnly={!!defaultCustomerName}
             />
           </div>
+          {!defaultCustomerName && (
+             <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="mobile-number" className="text-right">
+                    Mobile
+                </Label>
+                <div className="relative col-span-3">
+                     <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        id="mobile-number"
+                        type="tel"
+                        value={mobileNumber}
+                        onChange={(e) => setMobileNumber(e.target.value)}
+                        placeholder="Mobile Number"
+                        className="pl-10"
+                    />
+                </div>
+            </div>
+          )}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="product-name" className="text-right">
               Product

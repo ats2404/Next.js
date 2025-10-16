@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useUser, useDatabase } from '@/firebase';
-import { onValue, ref, query, orderByChild, equalTo } from 'firebase/database';
+import { onValue, ref, query, orderByChild, equalTo, child } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -30,6 +30,7 @@ export default function CustomerDetailPage() {
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [balance, setBalance] = useState(0);
+  const [mobileNumber, setMobileNumber] = useState('');
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<'credit' | 'debit'>('credit');
 
@@ -42,10 +43,10 @@ export default function CustomerDetailPage() {
   useEffect(() => {
     if (isUserLoading || !db || !user) return;
     
-    const transactionsRef = ref(db, `khata/${user.uid}`);
+    const transactionsRef = ref(db, `khata/${user.uid}/transactions`);
     const customerTransactionsQuery = query(transactionsRef, orderByChild('customerName'), equalTo(customerName));
 
-    const unsubscribe = onValue(customerTransactionsQuery, (snapshot) => {
+    const unsubscribeTransactions = onValue(customerTransactionsQuery, (snapshot) => {
         const data = snapshot.val();
         if (data) {
             const customerTransactions = Object.values(data).sort((a: any, b: any) => b.timestamp - a.timestamp);
@@ -66,7 +67,19 @@ export default function CustomerDetailPage() {
         }
     });
 
-    return () => unsubscribe();
+    const customerRef = ref(db, `khata/${user.uid}/customers/${customerName}`);
+    const unsubscribeCustomer = onValue(customerRef, (snapshot) => {
+        const data = snapshot.val();
+        if(data && data.mobileNumber){
+            setMobileNumber(data.mobileNumber);
+        }
+    });
+
+
+    return () => {
+        unsubscribeTransactions();
+        unsubscribeCustomer();
+    }
 
   }, [user, isUserLoading, db, customerName]);
 
@@ -102,9 +115,11 @@ export default function CustomerDetailPage() {
                     <p className="text-xs opacity-80">सेटिंग्स देखें</p>
                 </div>
             </div>
-            <Button variant="ghost" size="icon">
-                <Phone className="h-6 w-6" />
-            </Button>
+            <a href={`tel:${mobileNumber}`}>
+                <Button variant="ghost" size="icon">
+                    <Phone className="h-6 w-6" />
+                </Button>
+            </a>
       </header>
 
       <main className="flex-1 overflow-y-auto pb-32">

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useDatabase } from '@/firebase';
-import { onValue, ref, query, orderByChild, equalTo } from 'firebase/database';
+import { onValue, ref } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -54,7 +54,7 @@ export default function KhataPage() {
         });
 
         // Fetch transactions and calculate totals
-        const transactionsRef = ref(db, `khata/${user.uid}`);
+        const transactionsRef = ref(db, `khata/${user.uid}/transactions`);
         onValue(transactionsRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
