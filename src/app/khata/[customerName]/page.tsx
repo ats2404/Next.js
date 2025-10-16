@@ -4,13 +4,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useUser, useDatabase } from '@/firebase';
-import { onValue, ref, query, orderByChild, equalTo, child } from 'firebase/database';
+import { onValue, ref, query, orderByChild, equalTo } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ChevronLeft, Phone, Calendar, FileText, IndianRupee, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { AddTransactionDialog } from '@/components/add-transaction-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { generateQrCodeImage } from '@/lib/qr-code-generator';
 
 
 // A simple WhatsApp icon component
@@ -26,11 +28,14 @@ export default function CustomerDetailPage() {
   const db = useDatabase();
   const router = useRouter();
   const params = useParams();
+  const { toast } = useToast();
   const customerName = decodeURIComponent(params.customerName as string);
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [balance, setBalance] = useState(0);
   const [mobileNumber, setMobileNumber] = useState('');
+  const [shopName, setShopName] = useState('');
+  const [upiId, setUpiId] = useState('');
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<'credit' | 'debit'>('credit');
 
@@ -43,6 +48,23 @@ export default function CustomerDetailPage() {
   useEffect(() => {
     if (isUserLoading || !db || !user) return;
     
+    // Fetch user details like shop name and upi id
+    const userRef = ref(db, 'users/' + user.uid);
+    onValue(userRef, (snapshot) => {
+        const userData = snapshot.val();
+        if (userData && userData.mobileNumber) {
+            const mobileUserRef = ref(db, 'mobileUsers/' + userData.mobileNumber);
+            onValue(mobileUserRef, (mobileSnapshot) => {
+                const mobileData = mobileSnapshot.val();
+                if(mobileData) {
+                    setShopName(mobileData.shopName || '');
+                    setUpiId(mobileData.upiId || '');
+                }
+            });
+        }
+    });
+
+    // Fetch customer's transactions
     const transactionsRef = ref(db, `khata/${user.uid}/transactions`);
     const customerTransactionsQuery = query(transactionsRef, orderByChild('customerName'), equalTo(customerName));
 
@@ -67,6 +89,7 @@ export default function CustomerDetailPage() {
         }
     });
 
+    // Fetch customer's mobile number
     const customerRef = ref(db, `khata/${user.uid}/customers/${customerName}`);
     const unsubscribeCustomer = onValue(customerRef, (snapshot) => {
         const data = snapshot.val();
@@ -97,14 +120,58 @@ export default function CustomerDetailPage() {
     }, 0);
   }
   
-  const handleReminder = () => {
+  const handleReminder = async (type: 'whatsapp' | 'sms') => {
     if (!mobileNumber) {
-        alert("Customer mobile number not available.");
+        toast({ variant: "destructive", title: "Error", description: "Customer mobile number not available." });
         return;
     }
-    const message = `Hello ${customerName}, this is a friendly reminder that your outstanding balance is ₹${Math.abs(balance)}. Please make a payment at your earliest convenience. Thank you!`;
-    const whatsappUrl = `https://wa.me/${mobileNumber.startsWith('91') ? '' : '91'}${mobileNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+     if (balance >= 0) {
+        toast({ title: "No Dues", description: "This customer has no outstanding balance." });
+        return;
+    }
+    if (!upiId) {
+        toast({ variant: "destructive", title: "Error", description: "Your UPI ID is not set. Please set it in the calculator." });
+        return;
+    }
+
+    const amountToPay = Math.abs(balance).toString();
+    const reminderText = `Hello ${customerName}, this is a friendly reminder from ${shopName}. Your outstanding balance is ₹${amountToPay}. Please make a payment at your earliest convenience. Thank you!`;
+
+    const qrImageFile = await generateQrCodeImage(shopName, amountToPay, upiId);
+
+    if (!qrImageFile) {
+        toast({
+            variant: "destructive",
+            title: "QR Generation Failed",
+            description: "Could not create the QR code image for sharing.",
+        });
+        return;
+    }
+    
+    try {
+        const shareData: ShareData = {
+            files: [qrImageFile],
+            title: 'Payment Reminder',
+            text: reminderText,
+        };
+        
+        if (navigator.share && navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+        } else {
+             // Fallback for browsers that don't support sharing files (like some desktops)
+             const url = type === 'whatsapp' 
+                ? `https://wa.me/${mobileNumber.startsWith('91') ? '' : '91'}${mobileNumber}?text=${encodeURIComponent(reminderText)}`
+                : `sms:${mobileNumber}?body=${encodeURIComponent(reminderText)}`;
+            window.open(url, '_blank');
+        }
+    } catch (error) {
+        console.error('Sharing failed', error);
+        toast({
+            variant: "destructive",
+            title: "Sharing Failed",
+            description: "Could not share the reminder.",
+        });
+    }
   };
 
 
@@ -159,11 +226,11 @@ export default function CustomerDetailPage() {
                     <IndianRupee className="h-6 w-6 mb-1" />
                     <span className="text-xs">पेमेंट</span>
                 </Button>
-                 <Button onClick={handleReminder} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
+                 <Button onClick={() => handleReminder('whatsapp')} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <WhatsAppIcon className="h-6 w-6 mb-1" />
                     <span className="text-xs">रिमाइंडर</span>
                 </Button>
-                 <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
+                 <Button onClick={() => handleReminder('sms')} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <MessageSquare className="h-6 w-6 mb-1" />
                     <span className="text-xs">SMS</span>
                 </Button>
@@ -220,5 +287,3 @@ export default function CustomerDetailPage() {
     </div>
   );
 }
-
-    

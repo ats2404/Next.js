@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -27,6 +28,7 @@ import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { AddTransactionDialog } from './add-transaction-dialog';
+import { generateQrCodeImage } from '@/lib/qr-code-generator';
 
 
 type Operator = '+' | '-' | '×' | '÷';
@@ -204,83 +206,43 @@ const Calculator = () => {
   };
 
   const handleShare = async () => {
-    if (!qrCodeRef.current) return;
+    if (!upiId || !shopName || !paymentAmount) return;
 
-    const svgElement = qrCodeRef.current.querySelector('svg');
-    if (!svgElement) return;
+    const qrImageFile = await generateQrCodeImage(shopName, paymentAmount, upiId);
+    
+    if (!qrImageFile) {
+        toast({
+            variant: "destructive",
+            title: "QR Generation Failed",
+            description: "Could not create the QR code image for sharing.",
+        });
+        return;
+    }
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const svgString = new XMLSerializer().serializeToString(svgElement);
-    const decodedSvg = unescape(encodeURIComponent(svgString));
-    const url = 'data:image/svg+xml;base64,' + btoa(decodedSvg);
-
-    const img = new Image();
-    img.onload = async () => {
-      const qrSize = 256;
-      const padding = 20;
-      const topSectionHeight = 80;
-      const bottomPadding = 20;
-
-      canvas.width = qrSize + padding * 2;
-      canvas.height = qrSize + topSectionHeight + bottomPadding;
-
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = 'black';
-      ctx.font = 'bold 24px Poppins, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(shopName, canvas.width / 2, 40);
-
-      ctx.font = 'bold 36px Poppins, sans-serif';
-      ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 80);
-
-      ctx.drawImage(img, padding, topSectionHeight, qrSize, qrSize);
-
-      const pngDataUrl = canvas.toDataURL('image/png');
-      
-      try {
-        const response = await fetch(pngDataUrl);
-        const blob = await response.blob();
-        const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
-        
+    try {
         const shareData = {
-          files: [file],
-          title: 'Payment Request',
-          text: `Here is the QR code to pay ${shopName}.`,
+            files: [qrImageFile],
+            title: 'Payment Request',
+            text: `Here is the QR code to pay ${shopName}.`,
         };
 
         if (navigator.share && navigator.canShare(shareData)) {
             await navigator.share(shareData);
         } else {
-           toast({
-              variant: "destructive",
-              title: "Sharing Not Supported",
-              description: "Your browser does not support sharing files.",
+            toast({
+                variant: "destructive",
+                title: "Sharing Not Supported",
+                description: "Your browser does not support sharing files.",
             });
         }
-
-      } catch (error) {
+    } catch (error) {
         console.error('Sharing failed', error);
         toast({
-          variant: "destructive",
-          title: "Sharing Failed",
-          description: "Could not share the QR code.",
+            variant: "destructive",
+            title: "Sharing Failed",
+            description: "Could not share the QR code.",
         });
-      }
-    };
-    img.onerror = (e) => {
-        console.error("Image loading failed:", e);
-        toast({
-          variant: "destructive",
-          title: "Image Creation Failed",
-          description: "Could not create QR code image for sharing.",
-        });
-    };
-    img.src = url;
+    }
   };
 
 
