@@ -10,6 +10,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ChevronLeft, Phone, Calendar, FileText, IndianRupee, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
+import { AddTransactionDialog } from '@/components/add-transaction-dialog';
+
 
 // A simple WhatsApp icon component
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -28,6 +30,14 @@ export default function CustomerDetailPage() {
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [balance, setBalance] = useState(0);
+  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
+  const [transactionType, setTransactionType] = useState<'credit' | 'debit'>('credit');
+
+  const handleOpenDialog = (type: 'credit' | 'debit') => {
+    setTransactionType(type);
+    setIsAddTransactionOpen(true);
+  };
+
 
   useEffect(() => {
     if (isUserLoading || !db || !user) return;
@@ -35,7 +45,7 @@ export default function CustomerDetailPage() {
     const transactionsRef = ref(db, `khata/${user.uid}`);
     const customerTransactionsQuery = query(transactionsRef, orderByChild('customerName'), equalTo(customerName));
 
-    onValue(customerTransactionsQuery, (snapshot) => {
+    const unsubscribe = onValue(customerTransactionsQuery, (snapshot) => {
         const data = snapshot.val();
         if (data) {
             const customerTransactions = Object.values(data).sort((a: any, b: any) => b.timestamp - a.timestamp);
@@ -50,8 +60,13 @@ export default function CustomerDetailPage() {
                 }
             });
             setBalance(currentBalance);
+        } else {
+            setTransactions([]);
+            setBalance(0);
         }
     });
+
+    return () => unsubscribe();
 
   }, [user, isUserLoading, db, customerName]);
 
@@ -163,13 +178,19 @@ export default function CustomerDetailPage() {
       </main>
       
       <footer className="fixed bottom-0 left-0 right-0 bg-card border-t dark:border-gray-700 grid grid-cols-2 gap-4 p-4">
-          <Button className="h-12 bg-red-600 hover:bg-red-700 text-white text-base">
+          <Button onClick={() => handleOpenDialog('debit')} className="h-12 bg-red-600 hover:bg-red-700 text-white text-base">
             आपने दिए ₹
           </Button>
-          <Button className="h-12 bg-green-600 hover:bg-green-700 text-white text-base">
+          <Button onClick={() => handleOpenDialog('credit')} className="h-12 bg-green-600 hover:bg-green-700 text-white text-base">
             आपको मिले ₹
           </Button>
       </footer>
+      <AddTransactionDialog
+        isOpen={isAddTransactionOpen}
+        onOpenChange={setIsAddTransactionOpen}
+        defaultCustomerName={customerName}
+        defaultTransactionType={transactionType}
+      />
     </div>
   );
 }

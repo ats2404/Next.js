@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser, useDatabase } from '@/firebase';
-import { ref, push, serverTimestamp } from 'firebase/database';
+import { ref, push, set, serverTimestamp } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -23,17 +23,35 @@ interface AddTransactionDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onTransactionSave?: () => void;
+  defaultCustomerName?: string;
+  defaultTransactionType?: 'credit' | 'debit';
 }
 
-export function AddTransactionDialog({ isOpen, onOpenChange, onTransactionSave }: AddTransactionDialogProps) {
+export function AddTransactionDialog({ 
+    isOpen, 
+    onOpenChange, 
+    onTransactionSave,
+    defaultCustomerName = '',
+    defaultTransactionType = 'credit'
+}: AddTransactionDialogProps) {
   const { user } = useUser();
   const db = useDatabase();
   const { toast } = useToast();
 
-  const [customerName, setCustomerName] = useState('');
+  const [customerName, setCustomerName] = useState(defaultCustomerName);
   const [productName, setProductName] = useState('');
   const [transactionAmount, setTransactionAmount] = useState('');
-  const [transactionType, setTransactionType] = useState<'credit' | 'debit'>('credit');
+  const [transactionType, setTransactionType] = useState<'credit' | 'debit'>(defaultTransactionType);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCustomerName(defaultCustomerName);
+      setTransactionType(defaultTransactionType);
+      // Reset other fields
+      setProductName('');
+      setTransactionAmount('');
+    }
+  }, [isOpen, defaultCustomerName, defaultTransactionType]);
 
   const {
     isListening,
@@ -73,11 +91,6 @@ export function AddTransactionDialog({ isOpen, onOpenChange, onTransactionSave }
       .then(() => {
         toast({ title: 'Success', description: 'Transaction saved successfully.' });
         onOpenChange(false);
-        // Reset form
-        setCustomerName('');
-        setProductName('');
-        setTransactionAmount('');
-        setTransactionType('credit');
         if (onTransactionSave) {
             onTransactionSave();
         }
@@ -123,6 +136,7 @@ export function AddTransactionDialog({ isOpen, onOpenChange, onTransactionSave }
               onChange={(e) => setCustomerName(e.target.value)}
               className="col-span-3"
               placeholder="Customer Name"
+              readOnly={!!defaultCustomerName}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -158,7 +172,6 @@ export function AddTransactionDialog({ isOpen, onOpenChange, onTransactionSave }
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">Type</Label>
             <RadioGroup
-              defaultValue="credit"
               className="col-span-3 flex gap-4"
               value={transactionType}
               onValueChange={(value: 'credit' | 'debit') => setTransactionType(value)}
