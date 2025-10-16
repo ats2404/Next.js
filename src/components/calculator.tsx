@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
-import { Moon, Sun, User, Pencil, Share2, Divide, Book } from 'lucide-react';
+import { Moon, Sun, User, Pencil, Share2, Divide } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useDatabase } from '@/firebase';
 import { ref, onValue, set } from 'firebase/database';
@@ -31,6 +31,17 @@ import { generateQrCodeImage } from '@/lib/qr-code-generator';
 
 
 type Operator = '+' | '-' | '×' | '÷';
+
+const KhataIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Z" />
+        <path d="M15 2v20" />
+        <path d="M8 7h4" />
+        <path d="M8 12h4" />
+        <path d="M8 17h4" />
+    </svg>
+);
+
 
 const Calculator = () => {
   const { theme, setTheme } = useTheme();
@@ -333,7 +344,10 @@ const Calculator = () => {
         
         <Button onClick={() => handleNumberClick('0')} className={defaultButtonClass}>0</Button>
         <Button onClick={handleDecimalClick} className={defaultButtonClass}>.</Button>
-        <Button onClick={openKhataBook} className={`${opButtonClass} w-auto`}><Book /></Button>
+        <Button onClick={openKhataBook} className={`${opButtonClass} flex-col h-20 w-20 text-base`}>
+            <KhataIcon className="h-8 w-8 mb-1" />
+            Khata
+        </Button>
         <Button onClick={handleEqualsClick} className={opButtonClass}>=</Button>
       </div>
 
