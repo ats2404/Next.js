@@ -8,13 +8,16 @@ import { onValue, ref, query, orderByChild, equalTo } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ChevronLeft, Phone, Calendar, FileText, IndianRupee, MessageSquare } from 'lucide-react';
+import { ChevronLeft, Phone, Calendar as CalendarIcon, FileText, IndianRupee, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateQrCodeImage } from '@/lib/qr-code-generator';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 
 // A simple WhatsApp icon component
@@ -40,6 +43,8 @@ export default function CustomerDetailPage() {
   const [mobileNumber, setMobileNumber] = useState('');
   const [shopName, setShopName] = useState('');
   const [upiId, setUpiId] = useState('');
+  const [collectionDate, setCollectionDate] = useState<Date | undefined>();
+
 
   const handleOpenTransactionPage = (type: 'credit' | 'debit') => {
     router.push(`/khata/add-transaction?customerName=${encodeURIComponent(customerName)}&type=${type}`);
@@ -241,10 +246,36 @@ export default function CustomerDetailPage() {
                     <p className="text-sm opacity-80">{balance >= 0 ? 'Advance' : 'आपको मिलेंगे'}</p>
                     <p className={`text-2xl font-bold ${balance < 0 ? 'text-red-300' : 'text-green-300'}`}>₹ {Math.abs(balance).toLocaleString()}</p>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-5 w-5" />
-                    <span>कलेक्शन के लिए रिमाइंडर सेट करें</span>
-                </div>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant={"outline"}
+                            className={cn(
+                                "w-[240px] justify-start text-left font-normal bg-transparent text-white border-white/50 hover:bg-white/20 hover:text-white",
+                                !collectionDate && "text-white/80"
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {collectionDate ? format(collectionDate, "PPP") : <span>कलेक्शन के लिए रिमाइंडर सेट करें</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                            mode="single"
+                            selected={collectionDate}
+                            onSelect={(date) => {
+                                setCollectionDate(date);
+                                if (date) {
+                                    toast({
+                                        title: "Reminder Set",
+                                        description: `Collection reminder set for ${format(date, "PPP")}.`,
+                                    });
+                                }
+                            }}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
              </div>
           </div>
         </div>
