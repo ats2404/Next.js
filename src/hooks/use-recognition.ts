@@ -27,17 +27,33 @@ declare const window: Window;
 
 interface UseRecognitionProps {
     onResult: (transcript: string) => void;
+    continuous?: boolean;
 }
 
-export const useRecognition = ({ onResult }: UseRecognitionProps) => {
+export const useRecognition = ({ onResult, continuous = false }: UseRecognitionProps) => {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const isSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
+  const stopRecognition = useCallback(() => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+    }
+  }, [isListening]);
+
   const onEnd = useCallback(() => {
     setIsListening(false);
-  }, []);
+    if (continuous && recognitionRef.current) {
+        // If continuous is true, restart recognition after it ends.
+        // This handles cases where the browser might time it out.
+        try {
+            recognitionRef.current.start();
+        } catch (e) {
+            console.error("Could not restart recognition", e);
+        }
+    }
+  }, [continuous]);
 
   useEffect(() => {
     if (!isSupported) {
@@ -50,9 +66,9 @@ export const useRecognition = ({ onResult }: UseRecognitionProps) => {
     }
     
     const recognition = new Recognition();
-    recognition.continuous = false; // Stop after first result
-    recognition.interimResults = false; // We only want final results
-    recognition.lang = 'en-IN'; // Set to Indian English
+    recognition.continuous = continuous;
+    recognition.interimResults = false;
+    recognition.lang = 'en-IN';
 
     recognition.onresult = (event) => {
       let finalTranscript = '';
@@ -64,10 +80,16 @@ export const useRecognition = ({ onResult }: UseRecognitionProps) => {
       if (finalTranscript) {
         onResult(finalTranscript.trim());
       }
-      stopRecognition();
+      if (!continuous) {
+        stopRecognition();
+      }
     };
 
     recognition.onerror = (event) => {
+      if (event.error === 'no-speech') {
+        // Ignore no-speech errors in continuous mode to allow restart
+        if (continuous) return;
+      }
       console.error('Speech recognition error', event.error);
       stopRecognition();
     };
@@ -77,21 +99,22 @@ export const useRecognition = ({ onResult }: UseRecognitionProps) => {
     };
 
     recognitionRef.current = recognition;
+
+    return () => {
+      recognition.stop();
+    }
     
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSupported, onResult]);
+  }, [isSupported, onResult, continuous, stopRecognition, onEnd]);
   
   const startRecognition = useCallback(() => {
     if (recognitionRef.current && !isListening) {
-      recognitionRef.current.start();
-      setIsListening(true);
-    }
-  }, [isListening]);
-
-  const stopRecognition = useCallback(() => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch(e) {
+        // This can happen if start() is called while it's already starting
+        console.error("Could not start recognition", e);
+      }
     }
   }, [isListening]);
 
@@ -103,5 +126,3 @@ export const useRecognition = ({ onResult }: UseRecognitionProps) => {
     isSupported,
   };
 };
-
-    

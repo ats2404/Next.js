@@ -100,7 +100,7 @@ const Calculator = () => {
     startRecognition,
     stopRecognition,
     isSupported,
-  } = useRecognition({ onResult: onRecognitionResult });
+  } = useRecognition({ onResult: onRecognitionResult, continuous: true });
 
   const handleCustomerLookup = () => {
     if (!isSupported) {
@@ -117,6 +117,12 @@ const Calculator = () => {
       startRecognition();
     }
   };
+
+  useEffect(() => {
+    if (isSupported) {
+      startRecognition();
+    }
+  }, [isSupported, startRecognition]);
   
 
   useEffect(() => {
@@ -487,5 +493,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
