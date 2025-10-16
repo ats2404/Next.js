@@ -18,6 +18,7 @@ import html2canvas from 'html2canvas';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/language-context';
 
 
 // A simple WhatsApp icon component
@@ -36,7 +37,7 @@ export default function CustomerDetailPage() {
   const { toast } = useToast();
   const customerName = decodeURIComponent(params.customerName as string);
   const reportRef = useRef<HTMLDivElement>(null);
-
+  const { t } = useLanguage();
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [balance, setBalance] = useState(0);
@@ -226,9 +227,9 @@ export default function CustomerDetailPage() {
                 <div>
                     <h1 className="text-lg font-semibold flex items-center gap-2">
                         {customerName}
-                        <span className="text-xs bg-blue-200 text-primary rounded-sm px-1.5 py-0.5">ग्राहक</span>
+                        <span className="text-xs bg-blue-200 text-primary rounded-sm px-1.5 py-0.5">{t('customer')}</span>
                     </h1>
-                    <p className="text-xs opacity-80">सेटिंग्स देखें</p>
+                    <p className="text-xs opacity-80">{t('viewSettings')}</p>
                 </div>
             </div>
             <a href={`tel:${mobileNumber}`}>
@@ -243,7 +244,7 @@ export default function CustomerDetailPage() {
           <div className="rounded-lg bg-white/10 p-4">
              <div className="flex justify-between items-center">
                 <div>
-                    <p className="text-sm opacity-80">{balance >= 0 ? 'Advance' : 'आपको मिलेंगे'}</p>
+                    <p className="text-sm opacity-80">{balance >= 0 ? t('advance') : t('youWillGet')}</p>
                     <p className={`text-2xl font-bold ${balance < 0 ? 'text-red-300' : 'text-green-300'}`}>₹ {Math.abs(balance).toLocaleString()}</p>
                 </div>
                 <Popover>
@@ -256,7 +257,7 @@ export default function CustomerDetailPage() {
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {collectionDate ? format(collectionDate, "PPP") : <span>कलेक्शन के लिए रिमाइंडर सेट करें</span>}
+                            {collectionDate ? format(collectionDate, "PPP") : <span>{t('setCollectionReminder')}</span>}
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -284,15 +285,15 @@ export default function CustomerDetailPage() {
             <div className="grid grid-cols-4 gap-2 text-center">
                 <Button onClick={handleDownloadReport} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <FileText className="h-6 w-6 mb-1" />
-                    <span className="text-xs">रिपोर्ट</span>
+                    <span className="text-xs">{t('report')}</span>
                 </Button>
                  <Button onClick={() => toast({ title: 'Coming Soon!', description: 'This feature will be available shortly.' })} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <IndianRupee className="h-6 w-6 mb-1" />
-                    <span className="text-xs">पेमेंट</span>
+                    <span className="text-xs">{t('payment')}</span>
                 </Button>
                  <Button onClick={() => handleReminder('whatsapp')} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <WhatsAppIcon className="h-6 w-6 mb-1" />
-                    <span className="text-xs">रिमाइंडर</span>
+                    <span className="text-xs">{t('reminder')}</span>
                 </Button>
                  <Button onClick={() => handleReminder('sms')} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <MessageSquare className="h-6 w-6 mb-1" />
@@ -303,10 +304,10 @@ export default function CustomerDetailPage() {
         
         <div className="p-4">
             <div className="flex justify-between text-xs text-muted-foreground px-2 py-1">
-                <span>एंट्रीज़</span>
+                <span>{t('entries')}</span>
                 <div className="flex gap-12">
-                    <span>आपने दिए</span>
-                    <span>आपको मिले</span>
+                    <span>{t('youGave')}</span>
+                    <span>{t('youGot')}</span>
                 </div>
             </div>
             <div className="space-y-2">
@@ -317,7 +318,7 @@ export default function CustomerDetailPage() {
                                 <p className="text-sm text-muted-foreground">{format(new Date(tx.timestamp), 'dd MMM yy • hh:mm a')}</p>
                                 <p className="font-semibold text-foreground truncate">{tx.productName}</p>
                                 <p className="text-xs bg-gray-200 dark:bg-gray-700 rounded-sm px-1 py-0.5 inline-block mt-1">
-                                    बैलेंस ₹{getBalanceAfterTransaction(index).toLocaleString()}
+                                    {t('balance')} ₹{getBalanceAfterTransaction(index).toLocaleString()}
                                 </p>
                             </div>
                             <div className={`col-span-1 text-center font-bold text-red-500 ${tx.type === 'debit' ? 'visible animate-slide-in-fade' : 'invisible'}`}>
@@ -336,10 +337,10 @@ export default function CustomerDetailPage() {
       
       <footer className="fixed bottom-0 left-0 right-0 bg-card border-t dark:border-gray-700 grid grid-cols-2 gap-4 p-4">
           <Button onClick={() => handleOpenTransactionPage('debit')} className="h-12 bg-red-600 hover:bg-red-700 text-white text-base">
-            आपने दिए ₹
+            {t('youGave')} ₹
           </Button>
           <Button onClick={() => handleOpenTransactionPage('credit')} className="h-12 bg-green-600 hover:bg-green-700 text-white text-base">
-            आपको मिले ₹
+            {t('youGot')} ₹
           </Button>
       </footer>
     </div>

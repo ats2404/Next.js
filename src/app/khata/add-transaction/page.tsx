@@ -13,6 +13,7 @@ import { useRecognition } from '@/hooks/use-recognition';
 import { Mic, Phone, Contact, ChevronLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useLanguage } from '@/context/language-context';
 
 export default function AddTransactionPage() {
   const { user } = useUser();
@@ -20,6 +21,7 @@ export default function AddTransactionPage() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
 
   const defaultCustomerName = searchParams.get('customerName') || '';
   const defaultTransactionType = (searchParams.get('type') as 'credit' | 'debit') || 'debit';
@@ -94,7 +96,7 @@ export default function AddTransactionPage() {
       return;
     }
 
-    if (!customerName || !productName || !transactionAmount || (!defaultCustomerName && !mobileNumber)) {
+    if (!customerName || !productName || !transactionAmount ) {
       toast({ variant: 'destructive', title: 'Error', description: 'Please fill all fields.' });
       return;
     }
@@ -155,21 +157,21 @@ export default function AddTransactionPage() {
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-semibold ml-4">Add Transaction</h1>
+        <h1 className="text-lg font-semibold ml-4">{t('addTransaction')}</h1>
       </header>
       <main className="flex-1 overflow-y-auto p-4">
         <Card>
             <CardHeader>
-                <CardTitle>Record a Transaction</CardTitle>
+                <CardTitle>{t('recordTransaction')}</CardTitle>
                 <CardDescription>
-                    Manually record a transaction for your customer. {isListening && `Listening for ${fieldToUpdate === 'amount' ? 'amount' : 'product name'}...`}
+                    {t('recordTransactionDescription')} {isListening && `${t('listeningFor')} ${fieldToUpdate === 'amount' ? t('amount') : t('productName')}...`}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="customer-name" className="text-right">
-                    Customer
+                    {t('customer')}
                     </Label>
                     <div className="col-span-3 flex items-center gap-2">
                         <Input
@@ -177,7 +179,7 @@ export default function AddTransactionPage() {
                         value={customerName}
                         onChange={(e) => setCustomerName(e.target.value)}
                         className="w-full"
-                        placeholder="Customer Name"
+                        placeholder={t('customerName')}
                         readOnly={!!defaultCustomerName}
                         />
                         {!defaultCustomerName && (
@@ -190,7 +192,7 @@ export default function AddTransactionPage() {
                 {!defaultCustomerName && (
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="mobile-number" className="text-right">
-                            Mobile
+                            {t('mobile')}
                         </Label>
                         <div className="relative col-span-3">
                             <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -199,7 +201,7 @@ export default function AddTransactionPage() {
                                 type="tel"
                                 value={mobileNumber}
                                 onChange={(e) => setMobileNumber(e.target.value)}
-                                placeholder="Mobile Number"
+                                placeholder={t('mobileNumber')}
                                 className="pl-10"
                             />
                         </div>
@@ -207,7 +209,7 @@ export default function AddTransactionPage() {
                 )}
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="product-name" className="text-right">
-                    Product
+                    {t('product')}
                     </Label>
                     <div className="col-span-3 flex items-center gap-2">
                         <Input
@@ -215,7 +217,7 @@ export default function AddTransactionPage() {
                         value={productName}
                         onChange={(e) => setProductName(e.target.value)}
                         className="w-full"
-                        placeholder="Product Name/Details"
+                        placeholder={t('productNameDetails')}
                         />
                         <Button variant={isListening && fieldToUpdate === 'productName' ? 'destructive' : 'outline'} size="icon" onClick={() => handleMicClick('productName')}>
                             <Mic className="h-4 w-4" />
@@ -224,7 +226,7 @@ export default function AddTransactionPage() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="amount" className="text-right">
-                    Amount
+                    {t('amount')}
                     </Label>
                     <div className="col-span-3 flex items-center gap-2">
                     <Input
@@ -241,7 +243,7 @@ export default function AddTransactionPage() {
                     </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Type</Label>
+                    <Label className="text-right">{t('type')}</Label>
                     <RadioGroup
                     className="col-span-3 flex gap-4"
                     value={transactionType}
@@ -249,18 +251,18 @@ export default function AddTransactionPage() {
                     >
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="debit" id="r2" />
-                        <Label htmlFor="r2" className="text-red-500">Debit (Udhar)</Label>
+                        <Label htmlFor="r2" className="text-red-500">{t('debit')} ({t('udhar')})</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="credit" id="r1" />
-                        <Label htmlFor="r1" className="text-green-500">Credit (Jama)</Label>
+                        <Label htmlFor="r1" className="text-green-500">{t('credit')} ({t('jama')})</Label>
                     </div>
                     </RadioGroup>
                 </div>
                 </div>
                 <div className="flex justify-center gap-2 mt-4">
-                    <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
-                    <Button onClick={handleSaveTransaction}>Save Transaction</Button>
+                    <Button variant="outline" onClick={() => router.back()}>{t('cancel')}</Button>
+                    <Button onClick={handleSaveTransaction}>{t('saveTransaction')}</Button>
                 </div>
             </CardContent>
         </Card>

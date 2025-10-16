@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { GlobalVoiceSearch } from '@/components/global-voice-search';
+import { LanguageProvider } from '@/context/language-context';
 
 export const metadata: Metadata = {
   title: 'Calculator App',
@@ -30,9 +31,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
-            {children}
-            <GlobalVoiceSearch />
-            <Toaster />
+            <LanguageProvider>
+              {children}
+              <GlobalVoiceSearch />
+              <Toaster />
+            </LanguageProvider>
           </FirebaseClientProvider>
         </ThemeProvider>
       </body>

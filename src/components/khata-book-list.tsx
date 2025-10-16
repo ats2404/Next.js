@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useLanguage } from '@/context/language-context';
 
 interface KhataBookListProps {
   transactions: any[];
@@ -19,6 +20,7 @@ interface CustomerSummary {
 }
 
 export function KhataBookList({ transactions }: KhataBookListProps) {
+  const { t } = useLanguage();
   
   const customerData = useMemo(() => {
     const customerMap = new Map<string, { balance: number; lastTimestamp: number }>();
@@ -40,7 +42,7 @@ export function KhataBookList({ transactions }: KhataBookListProps) {
       return {
         name,
         balance: data.balance,
-        lastActivity: data.lastTimestamp ? formatDistanceToNow(fromUnixTime(data.lastTimestamp), { addSuffix: true }) : 'No activity',
+        lastActivity: data.lastTimestamp ? formatDistanceToNow(fromUnixTime(data.lastTimestamp), { addSuffix: true }) : t('noActivity'),
       };
     }).sort((a, b) => {
         // Find latest timestamp for each customer to sort by recent activity
@@ -51,11 +53,11 @@ export function KhataBookList({ transactions }: KhataBookListProps) {
 
     return sortedCustomers;
 
-  }, [transactions]);
+  }, [transactions, t]);
 
 
   if (customerData.length === 0) {
-    return <p className="text-center text-muted-foreground p-8">No customers found.</p>;
+    return <p className="text-center text-muted-foreground p-8">{t('noCustomersFound')}</p>;
   }
 
   return (
@@ -78,10 +80,10 @@ export function KhataBookList({ transactions }: KhataBookListProps) {
                     ₹{Math.abs(customer.balance).toLocaleString()}
                 </p>
                 {customer.balance < 0 && (
-                    <Button variant="link" className="p-0 h-auto text-xs text-red-500">रिमाइंड कराएँ ></Button>
+                    <Button variant="link" className="p-0 h-auto text-xs text-red-500">{t('remind')} ></Button>
                 )}
                 {customer.balance > 0 && (
-                    <p className="text-xs text-green-500">Advance</p>
+                    <p className="text-xs text-green-500">{t('advance')}</p>
                 )}
                 </div>
             </CardContent>
