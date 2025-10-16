@@ -263,49 +263,52 @@ const Calculator = () => {
 
   const handleShare = async () => {
     if (!qrCodeRef.current) return;
-  
+
     const svgElement = qrCodeRef.current.querySelector('svg');
     if (!svgElement) return;
-  
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-  
+
     const svgString = new XMLSerializer().serializeToString(svgElement);
     const decodedSvg = unescape(encodeURIComponent(svgString));
     const url = 'data:image/svg+xml;base64,' + btoa(decodedSvg);
-  
+
     const img = new Image();
     img.onload = async () => {
       const qrSize = 256;
       const padding = 20;
-      const topMargin = 80;
-      const bottomMargin = 20;
+      const topSectionHeight = 80; // Space for shop name and amount
+      const bottomPadding = 20;
 
-      canvas.width = qrSize + (padding * 2);
-      canvas.height = qrSize + topMargin + bottomMargin;
-  
+      canvas.width = qrSize + padding * 2;
+      canvas.height = qrSize + topSectionHeight + bottomPadding;
+
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
+
       ctx.fillStyle = 'black';
       ctx.font = 'bold 24px Poppins, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(shopName, canvas.width / 2, 40);
-  
+
       ctx.font = 'bold 36px Poppins, sans-serif';
       ctx.fillText(`₹${paymentAmount}`, canvas.width / 2, 80);
-  
-      ctx.drawImage(img, padding, topMargin, qrSize, qrSize);
-  
+
+      ctx.drawImage(img, padding, topSectionHeight, qrSize, qrSize);
+
       const pngDataUrl = canvas.toDataURL('image/png');
       
       try {
-        const blob = await (await fetch(pngDataUrl)).blob();
+        const response = await fetch(pngDataUrl);
+        const blob = await response.blob();
         const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
         
         const shareData = {
           files: [file],
+          title: 'Payment Request',
+          text: `Here is the QR code to pay ${shopName}.`,
         };
 
         if (navigator.share && navigator.canShare(shareData)) {
@@ -338,6 +341,7 @@ const Calculator = () => {
     img.src = url;
   };
 
+
   const buttonClass = 'h-20 w-20 rounded-full text-3xl font-medium';
   const opButtonClass = `${buttonClass} bg-[hsl(var(--btn-operator-bg))] text-[hsl(var(--btn-operator-fg))] hover:bg-[hsl(var(--btn-operator-bg))]`;
   const greyButtonClass = `${buttonClass} bg-[hsl(var(--btn-grey-bg))] text-[hsl(var(--btn-grey-fg))] hover:bg-[hsl(var(--btn-grey-bg))]`;
@@ -362,6 +366,10 @@ const Calculator = () => {
         startRecognition();
     }
   }
+
+  const openKhataBook = () => {
+    router.push('/khata');
+  };
 
   return (
     <div className="bg-background p-4 rounded-3xl shadow-2xl w-full max-w-sm">
@@ -442,7 +450,7 @@ const Calculator = () => {
         
         <Button onClick={() => handleNumberClick('0')} className={defaultButtonClass}>0</Button>
         <Button onClick={handleDecimalClick} className={defaultButtonClass}>.</Button>
-        <Button onClick={() => setIsKhataBookOpen(true)} className={`${opButtonClass} w-auto`}><Book /></Button>
+        <Button onClick={openKhataBook} className={`${opButtonClass} w-auto`}><Book /></Button>
         <Button onClick={handleEqualsClick} className={opButtonClass}>=</Button>
       </div>
 
@@ -589,5 +597,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
