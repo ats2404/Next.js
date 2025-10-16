@@ -120,7 +120,7 @@ export default function CustomerDetailPage() {
     }, 0);
   }
   
-  const handleReminder = async (type: 'whatsapp' | 'sms') => {
+  const handleReminder = async () => {
     if (!mobileNumber) {
         toast({ variant: "destructive", title: "Error", description: "Customer mobile number not available." });
         return;
@@ -149,20 +149,18 @@ export default function CustomerDetailPage() {
     }
     
     try {
-        const shareData: ShareData = {
-            files: [qrImageFile],
-            title: 'Payment Reminder',
-            text: reminderText,
-        };
-        
-        if (navigator.share && navigator.canShare(shareData)) {
-            await navigator.share(shareData);
+        if (navigator.share && navigator.canShare({ files: [qrImageFile] })) {
+            await navigator.share({
+                files: [qrImageFile],
+                title: 'Payment Reminder',
+                text: reminderText,
+            });
         } else {
-             // Fallback for browsers that don't support sharing files (like some desktops)
-             const url = type === 'whatsapp' 
-                ? `https://wa.me/${mobileNumber.startsWith('91') ? '' : '91'}${mobileNumber}?text=${encodeURIComponent(reminderText)}`
-                : `sms:${mobileNumber}?body=${encodeURIComponent(reminderText)}`;
-            window.open(url, '_blank');
+             toast({
+                variant: "destructive",
+                title: "Sharing Not Supported",
+                description: "Your browser does not support sharing files.",
+            });
         }
     } catch (error) {
         console.error('Sharing failed', error);
@@ -226,11 +224,11 @@ export default function CustomerDetailPage() {
                     <IndianRupee className="h-6 w-6 mb-1" />
                     <span className="text-xs">पेमेंट</span>
                 </Button>
-                 <Button onClick={() => handleReminder('whatsapp')} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
+                 <Button onClick={handleReminder} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <WhatsAppIcon className="h-6 w-6 mb-1" />
                     <span className="text-xs">रिमाइंडर</span>
                 </Button>
-                 <Button onClick={() => handleReminder('sms')} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
+                 <Button onClick={handleReminder} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <MessageSquare className="h-6 w-6 mb-1" />
                     <span className="text-xs">SMS</span>
                 </Button>
