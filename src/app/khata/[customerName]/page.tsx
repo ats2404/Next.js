@@ -116,11 +116,11 @@ export default function CustomerDetailPage() {
 
   const getBalanceAfterTransaction = (index: number) => {
     return transactions.slice(0, index + 1).reduce((acc, tx) => {
-        return tx.type === 'credit' ? acc + tx.amount : acc - tx.amount;
-    }, 0);
+        return tx.type === 'credit' ? acc + tx.amount : tx.type === 'debit' ? acc - tx.amount : acc;
+    }, balance - transactions.reduce((acc, tx) => (tx.type === 'credit' ? acc + tx.amount : acc - tx.amount), 0) );
   }
   
-  const handleReminder = async () => {
+  const handleReminder = async (via: 'whatsapp' | 'sms') => {
     if (!mobileNumber) {
         toast({ variant: "destructive", title: "Error", description: "Customer mobile number not available." });
         return;
@@ -148,6 +148,12 @@ export default function CustomerDetailPage() {
         return;
     }
     
+    if (via === 'sms') {
+        const smsLink = `sms:${mobileNumber}?body=${encodeURIComponent(reminderText)}`;
+        window.location.href = smsLink;
+        return;
+    }
+
     try {
         if (navigator.share && navigator.canShare({ files: [qrImageFile] })) {
             await navigator.share({
@@ -156,11 +162,8 @@ export default function CustomerDetailPage() {
                 text: reminderText,
             });
         } else {
-             toast({
-                variant: "destructive",
-                title: "Sharing Not Supported",
-                description: "Your browser does not support sharing files.",
-            });
+             const whatsappLink = `https://wa.me/${mobileNumber}?text=${encodeURIComponent(reminderText)}`;
+             window.open(whatsappLink, '_blank');
         }
     } catch (error) {
         console.error('Sharing failed', error);
@@ -224,11 +227,11 @@ export default function CustomerDetailPage() {
                     <IndianRupee className="h-6 w-6 mb-1" />
                     <span className="text-xs">पेमेंट</span>
                 </Button>
-                 <Button onClick={handleReminder} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
+                 <Button onClick={() => handleReminder('whatsapp')} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <WhatsAppIcon className="h-6 w-6 mb-1" />
                     <span className="text-xs">रिमाइंडर</span>
                 </Button>
-                 <Button onClick={handleReminder} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
+                 <Button onClick={() => handleReminder('sms')} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <MessageSquare className="h-6 w-6 mb-1" />
                     <span className="text-xs">SMS</span>
                 </Button>
@@ -285,3 +288,5 @@ export default function CustomerDetailPage() {
     </div>
   );
 }
+
+    
