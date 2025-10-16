@@ -10,6 +10,39 @@ import { useToast } from '@/hooks/use-toast';
 import { useRecognition } from '@/hooks/use-recognition';
 import { CustomerHistoryDialog } from './customer-history-dialog';
 
+// Levenshtein distance function for fuzzy matching
+function levenshteinDistance(a: string, b: string): number {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+
+    const matrix = [];
+
+    for (let i = 0; i <= b.length; i++) {
+        matrix[i] = [i];
+    }
+
+    for (let j = 0; j <= a.length; j++) {
+        matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1, // substitution
+                    matrix[i][j - 1] + 1,     // insertion
+                    matrix[i - 1][j] + 1      // deletion
+                );
+            }
+        }
+    }
+
+    return matrix[b.length][a.length];
+}
+
+
 export function GlobalVoiceSearch() {
   const { user, db } = useDatabase ? { user: useUser().user, db: useDatabase() } : { user: null, db: null };
   const { toast } = useToast();
@@ -54,11 +87,23 @@ export function GlobalVoiceSearch() {
         if (snapshot.exists()) {
             const customers = snapshot.val();
             const customerNames = Object.keys(customers);
-            // Fuzzy search: find a customer whose name includes the spoken text
-            const foundCustomer = customerNames.find(name => name.toLowerCase().includes(formattedName));
             
-            if (foundCustomer) {
-                setHistoryCustomerName(foundCustomer);
+            let bestMatch: string | null = null;
+            let minDistance = Infinity;
+
+            for (const name of customerNames) {
+                const distance = levenshteinDistance(formattedName, name.toLowerCase());
+                const similarity = 1 - (distance / Math.max(formattedName.length, name.length));
+
+                // Find the best match with at least 30% similarity
+                if (similarity >= 0.3 && distance < minDistance) {
+                    minDistance = distance;
+                    bestMatch = name;
+                }
+            }
+            
+            if (bestMatch) {
+                setHistoryCustomerName(bestMatch);
                 setIsHistoryDialogOpen(true);
             } else {
                 toast({
