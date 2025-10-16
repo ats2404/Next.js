@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
-import { Moon, Sun, User, Pencil, Share2, Divide } from 'lucide-react';
+import { Moon, Sun, User, Pencil, Share2, Divide, Book } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useAuth } from '@/firebase';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
@@ -313,6 +313,13 @@ const Calculator = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
+  const handleKhataBookClick = () => {
+    toast({
+        title: "Coming Soon!",
+        description: "Khata Book functionality will be available soon."
+    });
+  }
+
   return (
     <div className="bg-background p-4 rounded-3xl shadow-2xl w-full max-w-sm">
       <div className="mb-4 flex justify-between items-center px-2">
@@ -390,8 +397,9 @@ const Calculator = () => {
         <Button onClick={() => handleNumberClick('3')} className={defaultButtonClass}>3</Button>
         <Button onClick={() => handleOperatorClick('+')} className={`${opButtonClass}`}>+</Button>
         
-        <Button onClick={() => handleNumberClick('0')} className={`${defaultButtonClass} col-span-2 w-auto`}>0</Button>
+        <Button onClick={() => handleNumberClick('0')} className={defaultButtonClass}>0</Button>
         <Button onClick={handleDecimalClick} className={defaultButtonClass}>.</Button>
+        <Button onClick={handleKhataBookClick} className={`${opButtonClass} w-auto`}><Book /></Button>
         <Button onClick={handleEqualsClick} className={opButtonClass}>=</Button>
       </div>
 
@@ -461,5 +469,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
