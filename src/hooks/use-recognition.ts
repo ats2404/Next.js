@@ -35,10 +35,14 @@ export const useRecognition = ({ onResult, continuous = false }: UseRecognitionP
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   // A ref to track if the user intentionally stopped the recognition
   const stoppedManuallyRef = useRef(false);
+  const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
   const stopRecognition = useCallback(() => {
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current);
+    }
     if (recognitionRef.current && isListening) {
       stoppedManuallyRef.current = true;
       recognitionRef.current.stop();
@@ -93,15 +97,22 @@ export const useRecognition = ({ onResult, continuous = false }: UseRecognitionP
     recognition.onerror = (event) => {
       // Errors like 'no-speech' or 'network' can stop the service.
       // We'll let the onend handler deal with restarting.
-      console.error('Speech recognition error:', event.error);
+      if (event.error !== 'no-speech') {
+        console.error('Speech recognition error:', event.error);
+      }
     };
 
     recognition.onend = () => {
       setIsListening(false);
-      // If continuous mode is on AND it wasn't stopped manually, restart it.
-      // This handles cases where the browser times it out after a period of silence.
+      // If continuous mode is on AND it wasn't stopped manually, restart it after a delay.
+      // This handles cases where the browser times it out.
       if (continuous && !stoppedManuallyRef.current) {
-        startRecognition();
+        if (restartTimeoutRef.current) {
+            clearTimeout(restartTimeoutRef.current);
+        }
+        restartTimeoutRef.current = setTimeout(() => {
+            startRecognition();
+        }, 10000); // 10-second delay
       }
     };
 
@@ -109,6 +120,9 @@ export const useRecognition = ({ onResult, continuous = false }: UseRecognitionP
 
     // Cleanup: stop recognition when the component unmounts.
     return () => {
+      if (restartTimeoutRef.current) {
+        clearTimeout(restartTimeoutRef.current);
+      }
       if (recognitionRef.current) {
         stoppedManuallyRef.current = true; // Prevent restart on unmount
         recognitionRef.current.stop();
