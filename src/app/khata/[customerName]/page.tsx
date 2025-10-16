@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useUser, useDatabase } from '@/firebase';
 import { onValue, ref, query, orderByChild, equalTo } from 'firebase/database';
@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateQrCodeImage } from '@/lib/qr-code-generator';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 
 // A simple WhatsApp icon component
@@ -31,6 +32,8 @@ export default function CustomerDetailPage() {
   const params = useParams();
   const { toast } = useToast();
   const customerName = decodeURIComponent(params.customerName as string);
+  const reportRef = useRef<HTMLDivElement>(null);
+
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [balance, setBalance] = useState(0);
@@ -118,67 +121,34 @@ export default function CustomerDetailPage() {
     }, balance - transactions.reduce((acc, tx) => (tx.type === 'credit' ? acc + tx.amount : acc - tx.amount), 0) );
   }
 
-  const handleDownloadReport = () => {
-    if (transactions.length === 0) {
+  const handleDownloadReport = async () => {
+    const reportElement = reportRef.current;
+    if (!reportElement) {
+        toast({ variant: "destructive", title: "Error", description: "Could not find the report content to capture." });
+        return;
+    }
+     if (transactions.length === 0) {
       toast({ variant: "destructive", title: "No Transactions", description: "There is no data to generate a report." });
       return;
     }
-    
-    // Base64 encoded logo image
-    const logo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAABJklEQVR4AWP4v5QABvj/V466cPz/VwZk8R8owv/V/2f/VwY0gP8z/P9fNvB/Of/fLwzL/wEaIPAPaID/Z/p/M8AABjTA/zP9/8P/VwY0wP8z/V8G/x8Z/j+D9V8G/v+D9l8G+P+n7b8M8P9v3n8Z4P9/1P4ZIIA/BP//J/T/D/p/A/z/k/7fDPD/T/p/M8D/P+n/DQMDwzUgb/D/T/l/M8D/P+X/zQADGMD/mf4fYP9v+38zwP8/af8NEID/Z/r/h/1/Yf83AwPDoQEGgP9n+v+H/X9h/zcDA8MhIMD/M/3/w/6/sP+bAQYwwP8z/f/D/r+w/5sBBjDA/zP9/0P6/4b9f2H/NwMDwzGgAf4fYP9f2P+dAQYwwP9n+v+H/X9h/zcjowGGAAA6YxNDOk0K7wAAAABJRU5ErkJggg==';
 
-    const doc = new jsPDF();
-    
-    // Add logo
-    doc.addImage(logo, 'PNG', 14, 15, 20, 20);
+    try {
+        const canvas = await html2canvas(reportElement, { scale: 2 });
+        const imgData = canvas.toDataURL('image/png');
+        
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
+        });
 
-    // Add Shop Name
-    doc.setFontSize(22);
-    doc.text(shopName, 40, 25);
-    doc.setFontSize(12);
-    doc.setTextColor(100);
-    doc.text(`Report for: ${customerName}`, 40, 32);
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`report-${customerName}.pdf`);
 
-    // Final Balance
-    doc.setFontSize(14);
-    const finalBalanceText = `Final Balance: ₹${balance.toLocaleString()}`;
-    const finalBalanceColor = balance < 0 ? [255, 0, 0] : [0, 128, 0];
-    doc.setTextColor(finalBalanceColor[0], finalBalanceColor[1], finalBalanceColor[2]);
-    doc.text(finalBalanceText, doc.internal.pageSize.getWidth() - 14, 28, { align: 'right' });
-    doc.setTextColor(0);
-
-    const chronologicalTransactions = [...transactions].reverse();
-    let runningBalance = 0;
-
-    const tableData = chronologicalTransactions.map((tx: any) => {
-      const isDebit = tx.type === 'debit';
-      runningBalance += isDebit ? -tx.amount : tx.amount;
-      
-      return [
-        format(new Date(tx.timestamp), 'dd/MM/yy, hh:mm a'),
-        tx.productName,
-        isDebit ? `₹${tx.amount.toLocaleString()}` : '',
-        !isDebit ? `₹${tx.amount.toLocaleString()}` : '',
-        `₹${runningBalance.toLocaleString()}`
-      ];
-    });
-
-    (doc as any).autoTable({
-        head: [['Date & Time', 'Details', 'Debit (Given)', 'Credit (Received)', 'Balance']],
-        body: tableData,
-        startY: 45,
-        headStyles: { fillColor: [22, 160, 133] },
-        styles: { halign: 'center' },
-        columnStyles: {
-            0: { halign: 'left' },
-            1: { halign: 'left' },
-            2: { halign: 'right', textColor: [255,0,0] },
-            3: { halign: 'right', textColor: [0,128,0] },
-            4: { halign: 'right' }
-        },
-    });
-
-    doc.save(`report-${customerName}.pdf`);
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({ variant: "destructive", title: "PDF Generation Failed", description: "An error occurred while creating the PDF." });
+    }
   };
   
   const handleReminder = async (via: 'whatsapp' | 'sms') => {
@@ -239,6 +209,7 @@ export default function CustomerDetailPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-950">
+      <div ref={reportRef} className="bg-gray-100 dark:bg-gray-950">
         <header className="bg-primary text-primary-foreground p-4 flex items-center justify-between shadow-md sticky top-0 z-10">
             <div className="flex items-center gap-3">
                 <Button variant="ghost" size="icon" onClick={() => router.push('/khata')}>
@@ -329,8 +300,8 @@ export default function CustomerDetailPage() {
                  ))}
             </div>
         </div>
-
       </main>
+      </div>
       
       <footer className="fixed bottom-0 left-0 right-0 bg-card border-t dark:border-gray-700 grid grid-cols-2 gap-4 p-4">
           <Button onClick={() => handleOpenTransactionPage('debit')} className="h-12 bg-red-600 hover:bg-red-700 text-white text-base">
@@ -343,5 +314,3 @@ export default function CustomerDetailPage() {
     </div>
   );
 }
-
-    
