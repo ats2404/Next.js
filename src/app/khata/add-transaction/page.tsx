@@ -58,9 +58,9 @@ export default function AddTransactionPage() {
   });
 
   const handlePickContact = async () => {
-    if ('contacts' in navigator && 'select' in navigator.contacts) {
+    if ('contacts' in navigator && 'select' in (navigator as any).contacts) {
       try {
-        const contacts = await (navigator.contacts as any).select(['name', 'tel'], { multiple: false });
+        const contacts = await (navigator as any).contacts.select(['name', 'tel'], { multiple: false });
         if (contacts.length > 0) {
           const contact = contacts[0];
           if (contact.name && contact.name.length > 0) {
