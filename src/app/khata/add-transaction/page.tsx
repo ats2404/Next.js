@@ -67,7 +67,8 @@ export default function AddTransactionPage() {
             setCustomerName(contact.name[0]);
           }
           if (contact.tel && contact.tel.length > 0) {
-            const formattedNumber = contact.tel[0].replace(/\s+/g, '').slice(-10);
+            // Remove spaces, hyphens, and parentheses, and take the last 10 digits.
+            const formattedNumber = contact.tel[0].replace(/[\s-()]/g, '').slice(-10);
             setMobileNumber(formattedNumber);
           }
         }
