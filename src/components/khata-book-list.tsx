@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -5,6 +6,7 @@ import { formatDistanceToNow, fromUnixTime } from 'date-fns';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface KhataBookListProps {
   transactions: any[];
@@ -59,30 +61,32 @@ export function KhataBookList({ transactions }: KhataBookListProps) {
   return (
     <div className="px-2 space-y-2 pb-24">
       {customerData.map((customer, index) => (
-        <Card key={index} className="rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800/50">
-          <CardContent className="p-3 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Avatar>
-                <AvatarFallback>{customer.name.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold">{customer.name}</p>
-                <p className="text-xs text-muted-foreground">{customer.lastActivity}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className={`font-bold ${customer.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                ₹{Math.abs(customer.balance).toLocaleString()}
-              </p>
-              {customer.balance < 0 && (
-                 <Button variant="link" className="p-0 h-auto text-xs text-red-500">रिमाइंड कराएँ ></Button>
-              )}
-               {customer.balance > 0 && (
-                 <p className="text-xs text-green-500">Advance</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <Link href={`/khata/${encodeURIComponent(customer.name)}`} key={index} passHref>
+            <Card className="rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer">
+            <CardContent className="p-3 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                <Avatar>
+                    <AvatarFallback>{customer.name.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <p className="font-semibold">{customer.name}</p>
+                    <p className="text-xs text-muted-foreground">{customer.lastActivity}</p>
+                </div>
+                </div>
+                <div className="text-right">
+                <p className={`font-bold ${customer.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    ₹{Math.abs(customer.balance).toLocaleString()}
+                </p>
+                {customer.balance < 0 && (
+                    <Button variant="link" className="p-0 h-auto text-xs text-red-500">रिमाइंड कराएँ ></Button>
+                )}
+                {customer.balance > 0 && (
+                    <p className="text-xs text-green-500">Advance</p>
+                )}
+                </div>
+            </CardContent>
+            </Card>
+        </Link>
       ))}
     </div>
   );
