@@ -99,7 +99,7 @@ export function GlobalVoiceSearch() {
 
   return (
     <>
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1">
         <Button
           onClick={handleCustomerLookup}
           size="icon"
@@ -110,6 +110,9 @@ export function GlobalVoiceSearch() {
         >
           <Mic className="h-10 w-10" />
         </Button>
+        <span className="text-xs font-medium text-muted-foreground">
+          Search Customer
+        </span>
       </div>
 
       {historyCustomerName && (
