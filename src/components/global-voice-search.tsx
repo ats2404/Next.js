@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Mic } from 'lucide-react';
 import { useUser, useDatabase } from '@/firebase';
-import { get, ref } from 'firebase/database';
+import { get, ref, onValue } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 import { useRecognition } from '@/hooks/use-recognition';
 import { CustomerHistoryDialog } from './customer-history-dialog';
@@ -15,6 +15,33 @@ export function GlobalVoiceSearch() {
   const { toast } = useToast();
   const [historyCustomerName, setHistoryCustomerName] = useState<string | null>(null);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [upiId, setUpiId] = useState('');
+
+  useEffect(() => {
+    if (user && db) {
+      const userRef = ref(db, 'users/' + user.uid);
+      const unsubscribe = onValue(userRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.mobileNumber) {
+          const mobileUserRef = ref(db, 'mobileUsers/' + data.mobileNumber);
+          const mobileUnsubscribe = onValue(mobileUserRef, (mobileSnapshot) => {
+            const mobileData = mobileSnapshot.val();
+            if (mobileData) {
+              setUpiId(mobileData.upiId || '');
+            } else {
+              setUpiId('');
+            }
+          });
+          return () => mobileUnsubscribe();
+        } else {
+          setUpiId('');
+        }
+      });
+      return () => unsubscribe();
+    } else {
+        setUpiId('');
+    }
+  }, [user, db]);
 
   const onRecognitionResult = useCallback(async (text: string) => {
     if (!user || !db) return;
@@ -93,8 +120,8 @@ export function GlobalVoiceSearch() {
     setHistoryCustomerName(null);
   }
 
-  if (!user) {
-    return null; // Don't show if user is not logged in
+  if (!user || !upiId) {
+    return null; // Don't show if user is not logged in or has no UPI ID
   }
 
   return (
@@ -127,3 +154,5 @@ export function GlobalVoiceSearch() {
     </>
   );
 }
+
+    
