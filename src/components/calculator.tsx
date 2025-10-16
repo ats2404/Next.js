@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
-import { Moon, Sun, User, Pencil, Share2, Divide, Book, Mic } from 'lucide-react';
+import { Moon, Sun, User, Pencil, Share2, Divide, Book } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useDatabase } from '@/firebase';
-import { ref, onValue, set, get } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 import QRCode from "react-qr-code";
 import {
   AlertDialog,
@@ -27,8 +27,6 @@ import {
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { AddTransactionDialog } from './add-transaction-dialog';
-import { CustomerHistoryDialog } from './customer-history-dialog';
 import { generateQrCodeImage } from '@/lib/qr-code-generator';
 
 
@@ -51,12 +49,8 @@ const Calculator = () => {
   const [isSubscriptionDialogVisible, setIsSubscriptionDialogVisible] = useState(false);
   const [qrCodeValue, setQrCodeValue] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('0');
-  const qrCodeRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState('inactive');
   
-  const [isKhataBookOpen, setIsKhataBookOpen] = useState(false);
-
-
   useEffect(() => {
     if (user && db) {
       const userRef = ref(db, 'users/' + user.uid);
@@ -95,7 +89,7 @@ const Calculator = () => {
           toast({ title: "Success", description: "UPI ID updated successfully." });
           setIsEditingUpi(false);
         })
-        .catch((error) => {
+        .catch(() => {
           toast({ variant: "destructive", title: "Error", description: "Failed to update UPI ID." });
         });
     }
@@ -350,7 +344,7 @@ const Calculator = () => {
                   <p className="text-muted-foreground text-sm">Paying to</p>
                   <p className="font-bold text-lg">{shopName}</p>
               </div>
-              <div ref={qrCodeRef} className="p-4 bg-white rounded-lg flex items-center justify-center border">
+              <div className="p-4 bg-white rounded-lg flex items-center justify-center border">
                   {qrCodeValue && (
                       <QRCode
                           size={256}
@@ -404,16 +398,8 @@ const Calculator = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <AddTransactionDialog 
-        isOpen={isKhataBookOpen}
-        onOpenChange={setIsKhataBookOpen}
-        onTransactionSave={openKhataBook}
-      />
     </div>
   );
 };
 
 export default Calculator;
-
-    

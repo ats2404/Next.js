@@ -5,8 +5,7 @@ import { useState, useCallback } from 'react';
 import { Button } from './ui/button';
 import { Mic } from 'lucide-react';
 import { useUser, useDatabase } from '@/firebase';
-import { get } from 'firebase/database';
-import { ref } from 'firebase/database';
+import { get, ref } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 import { useRecognition } from '@/hooks/use-recognition';
 import { CustomerHistoryDialog } from './customer-history-dialog';
@@ -20,7 +19,7 @@ export function GlobalVoiceSearch() {
   const onRecognitionResult = useCallback(async (text: string) => {
     if (!user || !db) return;
 
-    const formattedName = text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+    const formattedName = text.toLowerCase().trim();
 
     const customersRef = ref(db, `khata/${user.uid}/customers`);
     try {
@@ -28,28 +27,17 @@ export function GlobalVoiceSearch() {
         if (snapshot.exists()) {
             const customers = snapshot.val();
             const customerNames = Object.keys(customers);
-            const foundCustomer = customerNames.find(name => name.toLowerCase() === formattedName.toLowerCase());
+            // Fuzzy search: find a customer whose name includes the spoken text
+            const foundCustomer = customerNames.find(name => name.toLowerCase().includes(formattedName));
             
             if (foundCustomer) {
-                const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-                if (audioContext) {
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    oscillator.type = 'sine';
-                    oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
-                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                    oscillator.start();
-                    oscillator.stop(audioContext.currentTime + 0.1);
-                }
                 setHistoryCustomerName(foundCustomer);
                 setIsHistoryDialogOpen(true);
             } else {
                 toast({
                     variant: "destructive",
                     title: "Customer Not Found",
-                    description: `Could not find a customer named "${formattedName}".`,
+                    description: `Could not find a customer matching "${text}".`,
                 });
             }
         } else {
@@ -100,6 +88,11 @@ export function GlobalVoiceSearch() {
     }
   };
 
+  const onDialogClose = () => {
+    setIsHistoryDialogOpen(false);
+    setHistoryCustomerName(null);
+  }
+
   if (!user) {
     return null; // Don't show if user is not logged in
   }
@@ -109,9 +102,9 @@ export function GlobalVoiceSearch() {
       <div className="fixed bottom-6 right-6 z-50">
         <Button
           onClick={handleCustomerLookup}
-          variant={isListening ? 'destructive' : 'primary'}
+          variant={isListening ? 'destructive' : 'default'}
           size="icon"
-          className="rounded-full h-16 w-16 shadow-lg"
+          className="rounded-full h-16 w-16 shadow-lg bg-primary hover:bg-primary/90"
           aria-label="Customer Voice Search"
         >
           <Mic className="h-8 w-8" />
@@ -121,12 +114,10 @@ export function GlobalVoiceSearch() {
       {historyCustomerName && (
         <CustomerHistoryDialog
           isOpen={isHistoryDialogOpen}
-          onOpenChange={setIsHistoryDialogOpen}
+          onOpenChange={onDialogClose}
           customerName={historyCustomerName}
         />
       )}
     </>
   );
 }
-
-    
