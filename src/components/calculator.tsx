@@ -221,7 +221,7 @@ const Calculator = () => {
     img.onload = async () => {
       const qrSize = 256;
       const padding = 20;
-      const topSectionHeight = 80; // Space for shop name and amount
+      const topSectionHeight = 80;
       const bottomPadding = 20;
 
       canvas.width = qrSize + padding * 2;
@@ -452,5 +452,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
