@@ -30,7 +30,6 @@ import { useRouter } from 'next/navigation';
 import { AddTransactionDialog } from './add-transaction-dialog';
 import { CustomerHistoryDialog } from './customer-history-dialog';
 import { generateQrCodeImage } from '@/lib/qr-code-generator';
-import { useRecognition } from '@/hooks/use-recognition';
 
 
 type Operator = '+' | '-' | '×' | '÷';
@@ -56,84 +55,7 @@ const Calculator = () => {
   const [status, setStatus] = useState('inactive');
   
   const [isKhataBookOpen, setIsKhataBookOpen] = useState(false);
-  const [historyCustomerName, setHistoryCustomerName] = useState<string | null>(null);
-  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
 
-
-  const onRecognitionResult = useCallback(async (text: string) => {
-    if (!user || !db) return;
-  
-    const formattedName = text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
-  
-    const customersRef = ref(db, `khata/${user.uid}/customers`);
-    const snapshot = await get(customersRef);
-    if (snapshot.exists()) {
-      const customers = snapshot.val();
-      const customerNames = Object.keys(customers);
-      const foundCustomer = customerNames.find(name => name.toLowerCase() === formattedName.toLowerCase());
-      
-      if (foundCustomer) {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (audioContext) {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // Lower volume
-            oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.1);
-        }
-
-        setHistoryCustomerName(foundCustomer);
-        setIsHistoryDialogOpen(true);
-
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Customer Not Found",
-          description: `Could not find a customer named "${formattedName}".`,
-        });
-      }
-    } else {
-        toast({
-            variant: "destructive",
-            title: "No Customers",
-            description: "You have not added any customers to your Khata book yet.",
-        });
-    }
-  }, [user, db, toast]);
-
-  const {
-    isListening,
-    startRecognition,
-    stopRecognition,
-    isSupported,
-  } = useRecognition({ onResult: onRecognitionResult, continuous: true });
-
-  const handleCustomerLookup = () => {
-    if (!isSupported) {
-      toast({
-        variant: 'destructive',
-        title: 'Voice Recognition Not Supported',
-        description: 'Your browser does not support voice recognition.',
-      });
-      return;
-    }
-    if (isListening) {
-      stopRecognition();
-    } else {
-      startRecognition();
-    }
-  };
-
-  useEffect(() => {
-    if (isSupported) {
-      startRecognition();
-    }
-  }, [isSupported, startRecognition]);
-  
 
   useEffect(() => {
     if (user && db) {
@@ -420,16 +342,6 @@ const Calculator = () => {
         <Button onClick={openKhataBook} className={`${opButtonClass} w-auto`}><Book /></Button>
         <Button onClick={handleEqualsClick} className={opButtonClass}>=</Button>
       </div>
-      <div className="p-2 flex justify-center">
-         <Button
-            onClick={handleCustomerLookup}
-            variant={isListening ? 'destructive' : 'outline'}
-            className="w-full h-14 rounded-full text-lg"
-          >
-            <Mic className="mr-2 h-5 w-5" />
-            {isListening ? 'Listening...' : 'Customer Lookup'}
-          </Button>
-      </div>
 
       <Dialog open={isQrCodeVisible} onOpenChange={setIsQrCodeVisible}>
         <DialogContent className="sm:max-w-xs p-0">
@@ -498,15 +410,10 @@ const Calculator = () => {
         onOpenChange={setIsKhataBookOpen}
         onTransactionSave={openKhataBook}
       />
-      {historyCustomerName && (
-        <CustomerHistoryDialog
-          isOpen={isHistoryDialogOpen}
-          onOpenChange={setIsHistoryDialogOpen}
-          customerName={historyCustomerName}
-        />
-      )}
     </div>
   );
 };
 
 export default Calculator;
+
+    

@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { GlobalVoiceSearch } from '@/components/global-voice-search';
 
 export const metadata: Metadata = {
   title: 'Calculator App',
@@ -30,6 +31,7 @@ export default function RootLayout({
         >
           <FirebaseClientProvider>
             {children}
+            <GlobalVoiceSearch />
             <Toaster />
           </FirebaseClientProvider>
         </ThemeProvider>
@@ -37,3 +39,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

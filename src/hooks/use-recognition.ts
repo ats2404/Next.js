@@ -38,6 +38,21 @@ export const useRecognition = ({ onResult, continuous = false }: UseRecognitionP
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+  
+  const startRecognition = useCallback(() => {
+    if (recognitionRef.current && !isListening) {
+      try {
+        stoppedManuallyRef.current = false;
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch(e) {
+        console.error("Could not start recognition", e);
+        if (isListening) {
+            setIsListening(false);
+        }
+      }
+    }
+  }, [isListening]);
 
   const stopRecognition = useCallback(() => {
     if (restartTimeoutRef.current) {
@@ -49,20 +64,6 @@ export const useRecognition = ({ onResult, continuous = false }: UseRecognitionP
       setIsListening(false);
     }
   }, [isListening]);
-  
-  const startRecognition = useCallback(() => {
-    if (recognitionRef.current && !isListening) {
-      try {
-        stoppedManuallyRef.current = false;
-        recognitionRef.current.start();
-        setIsListening(true);
-      } catch(e) {
-        console.error("Could not start recognition", e);
-        setIsListening(false);
-      }
-    }
-  }, [isListening]);
-
 
   useEffect(() => {
     if (!isSupported) {
@@ -91,28 +92,30 @@ export const useRecognition = ({ onResult, continuous = false }: UseRecognitionP
       if (finalTranscript) {
         onResult(finalTranscript.trim());
       }
-      // In non-continuous mode, it will stop via the onend event.
+       if (!continuous) {
+         stopRecognition();
+       }
     };
 
     recognition.onerror = (event) => {
       // Errors like 'no-speech' or 'network' can stop the service.
       // We'll let the onend handler deal with restarting.
-      if (event.error !== 'no-speech') {
+      if (event.error !== 'no-speech' && event.error !== 'aborted') {
         console.error('Speech recognition error:', event.error);
       }
     };
 
     recognition.onend = () => {
-      setIsListening(false);
-      // If continuous mode is on AND it wasn't stopped manually, restart it after a delay.
-      // This handles cases where the browser times it out.
+      // Only update listening state if it wasn't manually stopped
+      if (!stoppedManuallyRef.current) {
+        setIsListening(false);
+      }
+
       if (continuous && !stoppedManuallyRef.current) {
         if (restartTimeoutRef.current) {
             clearTimeout(restartTimeoutRef.current);
         }
-        restartTimeoutRef.current = setTimeout(() => {
-            startRecognition();
-        }, 10000); // 10-second delay
+        // Don't restart immediately
       }
     };
 
@@ -129,7 +132,7 @@ export const useRecognition = ({ onResult, continuous = false }: UseRecognitionP
       }
     }
     
-  }, [isSupported, onResult, continuous, startRecognition]);
+  }, [isSupported, onResult, continuous, stopRecognition]);
   
 
   return {
@@ -139,3 +142,5 @@ export const useRecognition = ({ onResult, continuous = false }: UseRecognitionP
     isSupported,
   };
 };
+
+    
