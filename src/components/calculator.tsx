@@ -28,6 +28,7 @@ import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { AddTransactionDialog } from './add-transaction-dialog';
+import { CustomerHistoryDialog } from './customer-history-dialog';
 import { generateQrCodeImage } from '@/lib/qr-code-generator';
 import { useRecognition } from '@/hooks/use-recognition';
 
@@ -55,6 +56,9 @@ const Calculator = () => {
   const [status, setStatus] = useState('inactive');
   
   const [isKhataBookOpen, setIsKhataBookOpen] = useState(false);
+  const [historyCustomerName, setHistoryCustomerName] = useState<string | null>(null);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+
 
   const onRecognitionResult = useCallback(async (text: string) => {
     if (!user || !db) return;
@@ -78,7 +82,9 @@ const Calculator = () => {
         oscillator.start();
         oscillator.stop(audioContext.currentTime + 0.1); // Beep for 100ms
 
-        router.push(`/khata/${encodeURIComponent(foundCustomer)}`);
+        setHistoryCustomerName(foundCustomer);
+        setIsHistoryDialogOpen(true);
+
       } else {
         toast({
           variant: "destructive",
@@ -93,7 +99,7 @@ const Calculator = () => {
             description: "You have not added any customers to your Khata book yet.",
         });
     }
-  }, [user, db, router, toast]);
+  }, [user, db, toast]);
 
   const {
     isListening,
@@ -488,6 +494,13 @@ const Calculator = () => {
         onOpenChange={setIsKhataBookOpen}
         onTransactionSave={openKhataBook}
       />
+      {historyCustomerName && (
+        <CustomerHistoryDialog
+          isOpen={isHistoryDialogOpen}
+          onOpenChange={setIsHistoryDialogOpen}
+          customerName={historyCustomerName}
+        />
+      )}
     </div>
   );
 };
