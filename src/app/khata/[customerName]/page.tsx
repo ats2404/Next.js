@@ -115,6 +115,40 @@ export default function CustomerDetailPage() {
         return tx.type === 'credit' ? acc + tx.amount : tx.type === 'debit' ? acc - tx.amount : acc;
     }, balance - transactions.reduce((acc, tx) => (tx.type === 'credit' ? acc + tx.amount : acc - tx.amount), 0) );
   }
+
+  const handleDownloadReport = () => {
+    if (transactions.length === 0) {
+      toast({ variant: "destructive", title: "No Transactions", description: "There is no data to generate a report." });
+      return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,Date,Product,Amount Given (Debit),Amount Received (Credit),Balance\n";
+
+    // Since transactions are sorted descending, we reverse for chronological report
+    const chronologicalTransactions = [...transactions].reverse();
+    let runningBalance = 0;
+
+    chronologicalTransactions.forEach((tx: any) => {
+      const isDebit = tx.type === 'debit';
+      runningBalance += isDebit ? -tx.amount : tx.amount;
+
+      const date = format(new Date(tx.timestamp), 'yyyy-MM-dd HH:mm:ss');
+      const productName = `"${tx.productName.replace(/"/g, '""')}"`; // Escape double quotes
+      const debitAmount = isDebit ? tx.amount : '';
+      const creditAmount = !isDebit ? tx.amount : '';
+      
+      csvContent += `${date},${productName},${debitAmount},${creditAmount},${runningBalance}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `report-${customerName}.csv`);
+    document.body.appendChild(link);
+
+    link.click();
+    document.body.removeChild(link);
+  };
   
   const handleReminder = async (via: 'whatsapp' | 'sms') => {
     if (!mobileNumber) {
@@ -215,7 +249,7 @@ export default function CustomerDetailPage() {
 
         <div className="bg-white dark:bg-card p-2">
             <div className="grid grid-cols-4 gap-2 text-center">
-                <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
+                <Button onClick={handleDownloadReport} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <FileText className="h-6 w-6 mb-1" />
                     <span className="text-xs">रिपोर्ट</span>
                 </Button>
