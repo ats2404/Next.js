@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useDatabase } from '@/firebase';
 import { onValue, ref } from 'firebase/database';
@@ -28,6 +28,8 @@ export default function KhataPage() {
   const [totalCredit, setTotalCredit] = useState(0);
   const [totalDebit, setTotalDebit] = useState(0);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<Record<string, {name: string, mobileNumber: string}>>({});
+  const [searchTerm, setSearchTerm] = useState('');
 
 
   useEffect(() => {
@@ -52,6 +54,12 @@ export default function KhataPage() {
             }
         });
 
+        // Fetch all customers for filtering
+        const customersRef = ref(db, `khata/${user.uid}/customers`);
+        onValue(customersRef, (snapshot) => {
+            setCustomers(snapshot.val() || {});
+        });
+
         // Fetch transactions and calculate totals
         const transactionsRef = ref(db, `khata/${user.uid}/transactions`);
         onValue(transactionsRef, (snapshot) => {
@@ -70,10 +78,37 @@ export default function KhataPage() {
                 });
                 setTotalCredit(credit);
                 setTotalDebit(debit);
+            } else {
+                setTransactions([]);
+                setTotalCredit(0);
+                setTotalDebit(0);
             }
         });
     }
   }, [user, isUserLoading, router, db]);
+
+  const filteredTransactions = useMemo(() => {
+    if (!searchTerm) {
+      return transactions;
+    }
+    const lowercasedFilter = searchTerm.toLowerCase();
+
+    const customerNamesWithMatchingProducts = transactions
+        .filter(tx => tx.productName && tx.productName.toLowerCase().includes(lowercasedFilter))
+        .map(tx => tx.customerName);
+
+    const matchingCustomerNames = Object.values(customers)
+      .filter(c => 
+        c.name.toLowerCase().includes(lowercasedFilter) || 
+        (c.mobileNumber && c.mobileNumber.includes(lowercasedFilter))
+      )
+      .map(c => c.name);
+
+    const allMatchingCustomers = new Set([...customerNamesWithMatchingProducts, ...matchingCustomerNames]);
+
+    return transactions.filter(tx => allMatchingCustomers.has(tx.customerName));
+
+  }, [searchTerm, transactions, customers]);
 
   if (isUserLoading || !user) {
     return (
@@ -146,7 +181,12 @@ export default function KhataPage() {
             <div className="p-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input placeholder="ग्राहक खोजे" className="pl-10 h-12" />
+                <Input 
+                    placeholder="ग्राहक खोजे" 
+                    className="pl-10 h-12" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
                   <Button variant="ghost" className="text-muted-foreground gap-1">
                     <Filter className="h-4 w-4" />
@@ -160,7 +200,7 @@ export default function KhataPage() {
               </div>
             </div>
 
-            <KhataBookList transactions={transactions} />
+            <KhataBookList transactions={filteredTransactions} />
 
           </TabsContent>
           <TabsContent value="supplier" className="p-4 text-center">
