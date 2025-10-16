@@ -257,7 +257,7 @@ export default function AddTransactionPage() {
                     </RadioGroup>
                 </div>
                 </div>
-                <div className="flex justify-end gap-2 mt-4">
+                <div className="flex justify-center gap-2 mt-4">
                     <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
                     <Button onClick={handleSaveTransaction}>Save Transaction</Button>
                 </div>
