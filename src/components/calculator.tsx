@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
-import { Moon, Sun, User, Pencil, Share2, Delete } from 'lucide-react';
+import { Moon, Sun, User, Pencil, Share2, Divide } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useAuth } from '@/firebase';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
@@ -129,8 +129,20 @@ const Calculator = () => {
           throw new Error("Invalid expression");
       }
 
+      if (/\/0/.test(evalExpression)) {
+        setDisplayValue('Error');
+        setExpression('');
+        return;
+      }
+      
       // eslint-disable-next-line no-eval
       const result = eval(evalExpression);
+      
+      if (!isFinite(result)) {
+        setDisplayValue('Error');
+        setExpression('');
+        return;
+      }
       
       const resultString = String(Number(result.toFixed(2)));
       setExpression(resultString);
@@ -253,16 +265,13 @@ const Calculator = () => {
       ctx.drawImage(img, padding, topMargin, qrSize, qrSize);
   
       const pngDataUrl = canvas.toDataURL('image/png');
-      const text = `Payment request for ₹${paymentAmount} to ${shopName}. UPI ID: ${upiId}`;
-  
+      
       try {
         const blob = await (await fetch(pngDataUrl)).blob();
         const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
         
         const shareData = {
           files: [file],
-          title: 'Payment Request',
-          text: text,
         };
 
         if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
@@ -364,7 +373,7 @@ const Calculator = () => {
         <Button onClick={handleClearClick} className={greyButtonClass}>AC</Button>
         <Button onClick={handleToggleSignClick} className={greyButtonClass}>+/-</Button>
         <Button onClick={handlePercentClick} className={greyButtonClass}>%</Button>
-        <Button onClick={handleBackspaceClick} className={opButtonClass}><Delete /></Button>
+        <Button onClick={() => handleOperatorClick('÷')} className={opButtonClass}><Divide /></Button>
         
         <Button onClick={() => handleNumberClick('7')} className={defaultButtonClass}>7</Button>
         <Button onClick={() => handleNumberClick('8')} className={defaultButtonClass}>8</Button>
@@ -452,3 +461,5 @@ const Calculator = () => {
 };
 
 export default Calculator;
+
+    
