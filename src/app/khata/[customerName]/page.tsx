@@ -10,7 +10,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ChevronLeft, Phone, Calendar, FileText, IndianRupee, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
-import { AddTransactionDialog } from '@/components/add-transaction-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { generateQrCodeImage } from '@/lib/qr-code-generator';
 
@@ -36,12 +35,9 @@ export default function CustomerDetailPage() {
   const [mobileNumber, setMobileNumber] = useState('');
   const [shopName, setShopName] = useState('');
   const [upiId, setUpiId] = useState('');
-  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
-  const [transactionType, setTransactionType] = useState<'credit' | 'debit'>('credit');
 
-  const handleOpenDialog = (type: 'credit' | 'debit') => {
-    setTransactionType(type);
-    setIsAddTransactionOpen(true);
+  const handleOpenTransactionPage = (type: 'credit' | 'debit') => {
+    router.push(`/khata/add-transaction?customerName=${encodeURIComponent(customerName)}&type=${type}`);
   };
 
 
@@ -272,21 +268,13 @@ export default function CustomerDetailPage() {
       </main>
       
       <footer className="fixed bottom-0 left-0 right-0 bg-card border-t dark:border-gray-700 grid grid-cols-2 gap-4 p-4">
-          <Button onClick={() => handleOpenDialog('debit')} className="h-12 bg-red-600 hover:bg-red-700 text-white text-base">
+          <Button onClick={() => handleOpenTransactionPage('debit')} className="h-12 bg-red-600 hover:bg-red-700 text-white text-base">
             आपने दिए ₹
           </Button>
-          <Button onClick={() => handleOpenDialog('credit')} className="h-12 bg-green-600 hover:bg-green-700 text-white text-base">
+          <Button onClick={() => handleOpenTransactionPage('credit')} className="h-12 bg-green-600 hover:bg-green-700 text-white text-base">
             आपको मिले ₹
           </Button>
       </footer>
-      <AddTransactionDialog
-        isOpen={isAddTransactionOpen}
-        onOpenChange={setIsAddTransactionOpen}
-        defaultCustomerName={customerName}
-        defaultTransactionType={transactionType}
-      />
     </div>
   );
 }
-
-    
