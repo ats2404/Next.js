@@ -73,15 +73,6 @@ const Calculator = () => {
       const foundCustomer = customerNames.find(name => name.toLowerCase() === formattedName.toLowerCase());
       
       if (foundCustomer) {
-        // Play beep sound
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4 pitch
-        oscillator.connect(audioContext.destination);
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 0.1); // Beep for 100ms
-
         setHistoryCustomerName(foundCustomer);
         setIsHistoryDialogOpen(true);
 
@@ -506,3 +497,5 @@ const Calculator = () => {
 };
 
 export default Calculator;
+
+    
