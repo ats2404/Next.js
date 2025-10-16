@@ -5,13 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useUser, useDatabase } from '@/firebase';
 import { onValue, ref, query, orderByChild, equalTo } from 'firebase/database';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ChevronLeft, Bell, Search, Filter, FileText, UserPlus, Users, Landmark, MoreHorizontal, IndianRupee, Settings } from 'lucide-react';
+import { ChevronLeft, Bell, Search, Filter, FileText, UserPlus, Users, Landmark, IndianRupee, Languages } from 'lucide-react';
 import { KhataBookList } from '@/components/khata-book-list';
 import Link from 'next/link';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 export default function KhataPage() {
   const { user, isUserLoading } = useUser();
@@ -85,11 +90,24 @@ export default function KhataPage() {
           </Button>
           <h1 className="text-lg font-semibold truncate">{shopName}</h1>
         </div>
-        <div className="relative">
-          <Button variant="ghost" size="icon">
-            <Bell className="h-6 w-6" />
-          </Button>
-          <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-400 text-black text-xs font-bold">51</span>
+        <div className="flex items-center gap-2">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <Languages className="h-6 w-6" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuItem onSelect={() => alert('Language set to English')}>English</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => alert('Language set to Hindi')}>हिन्दी</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            <div className="relative">
+                <Button variant="ghost" size="icon">
+                <Bell className="h-6 w-6" />
+                </Button>
+                <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-400 text-black text-xs font-bold">51</span>
+            </div>
         </div>
       </header>
 
@@ -157,7 +175,7 @@ export default function KhataPage() {
       </div>
 
 
-      <footer className="bg-white dark:bg-card border-t dark:border-gray-700 grid grid-cols-4 text-center p-2 fixed bottom-0 left-0 right-0">
+      <footer className="bg-white dark:bg-card border-t dark:border-gray-700 grid grid-cols-2 text-center p-2 fixed bottom-0 left-0 right-0">
           <Button variant="ghost" className="flex flex-col items-center h-auto text-primary">
             <Users className="h-6 w-6" />
             <span className="text-xs">पार्टीज़</span>
@@ -165,16 +183,6 @@ export default function KhataPage() {
           <Button variant="ghost" className="flex flex-col items-center h-auto text-muted-foreground">
             <Landmark className="h-6 w-6" />
             <span className="text-xs">लान</span>
-          </Button>
-          <Link href="/settings" className="flex flex-col items-center h-auto text-muted-foreground justify-center pt-2">
-            <Button variant="ghost" className="flex flex-col items-center h-auto text-muted-foreground p-0">
-                <Settings className="h-6 w-6" />
-                <span className="text-xs mt-1">सेटिंग्स</span>
-            </Button>
-          </Link>
-           <Button variant="ghost" className="flex flex-col items-center h-auto text-muted-foreground">
-            <MoreHorizontal className="h-6 w-6" />
-            <span className="text-xs">मोर</span>
           </Button>
       </footer>
     </div>
