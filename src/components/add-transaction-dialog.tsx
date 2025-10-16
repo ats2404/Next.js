@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser, useDatabase } from '@/firebase';
 import { ref, push, set, serverTimestamp, get, child } from 'firebase/database';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,7 @@ export function AddTransactionDialog({
   const [productName, setProductName] = useState('');
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionType, setTransactionType] = useState<'credit' | 'debit'>(defaultTransactionType);
+  const [fieldToUpdate, setFieldToUpdate] = useState<'customerName' | 'amount' | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -54,6 +55,20 @@ export function AddTransactionDialog({
       setMobileNumber('');
     }
   }, [isOpen, defaultCustomerName, defaultTransactionType]);
+  
+  const onRecognitionResult = useCallback((text: string) => {
+    if (fieldToUpdate === 'amount') {
+      const numbers = text.match(/\d+/g);
+      if (numbers) {
+        setTransactionAmount(numbers.join(''));
+      }
+    } else if (fieldToUpdate === 'customerName') {
+        // Capitalize first letter of each word
+        const formattedName = text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+        setCustomerName(formattedName);
+    }
+    setFieldToUpdate(null);
+  }, [fieldToUpdate]);
 
   const {
     isListening,
@@ -61,12 +76,7 @@ export function AddTransactionDialog({
     stopRecognition,
     isSupported,
   } = useRecognition({
-    onResult: (text: string) => {
-      const numbers = text.match(/\d+/g);
-      if (numbers) {
-        setTransactionAmount(numbers.join(''));
-      }
-    },
+    onResult: onRecognitionResult,
   });
 
   const handleSaveTransaction = async () => {
@@ -116,7 +126,7 @@ export function AddTransactionDialog({
   };
 
 
-  const handleMicClick = () => {
+  const handleMicClick = (field: 'customerName' | 'amount') => {
     if (!isSupported) {
       toast({
         variant: 'destructive',
@@ -127,7 +137,9 @@ export function AddTransactionDialog({
     }
     if (isListening) {
       stopRecognition();
+      setFieldToUpdate(null);
     } else {
+      setFieldToUpdate(field);
       startRecognition();
     }
   };
@@ -138,7 +150,7 @@ export function AddTransactionDialog({
         <DialogHeader>
           <DialogTitle>Add to Khata Book</DialogTitle>
           <DialogDescription>
-            Manually record a transaction for your customer. {isListening && 'Listening...'}
+            Manually record a transaction for your customer. {isListening && `Listening for ${fieldToUpdate === 'customerName' ? 'customer name' : 'amount'}...`}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -146,14 +158,21 @@ export function AddTransactionDialog({
             <Label htmlFor="customer-name" className="text-right">
               Customer
             </Label>
-            <Input
-              id="customer-name"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className="col-span-3"
-              placeholder="Customer Name"
-              readOnly={!!defaultCustomerName}
-            />
+            <div className="col-span-3 flex items-center gap-2">
+                <Input
+                id="customer-name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full"
+                placeholder="Customer Name"
+                readOnly={!!defaultCustomerName}
+                />
+                {!defaultCustomerName && (
+                    <Button variant={isListening && fieldToUpdate === 'customerName' ? 'destructive' : 'outline'} size="icon" onClick={() => handleMicClick('customerName')}>
+                        <Mic className="h-4 w-4" />
+                    </Button>
+                )}
+            </div>
           </div>
           {!defaultCustomerName && (
              <div className="grid grid-cols-4 items-center gap-4">
@@ -198,7 +217,7 @@ export function AddTransactionDialog({
                 className="w-full"
                 placeholder="₹"
               />
-              <Button variant={isListening ? 'destructive' : 'outline'} size="icon" onClick={handleMicClick}>
+              <Button variant={isListening && fieldToUpdate === 'amount' ? 'destructive' : 'outline'} size="icon" onClick={() => handleMicClick('amount')}>
                 <Mic className="h-4 w-4" />
               </Button>
             </div>
