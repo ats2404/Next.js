@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
-import { Moon, Sun, User, Pencil, Share2, Divide, Book } from 'lucide-react';
+import { Moon, Sun, User, Pencil, Share2, Divide, Book, Mic } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useAuth, useDatabase } from '@/firebase';
 import { getDatabase, ref, onValue, set, push, serverTimestamp } from 'firebase/database';
@@ -31,6 +31,7 @@ import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useRecognition } from '@/hooks/use-recognition';
 
 
 type Operator = '+' | '-' | '×' | '÷';
@@ -61,6 +62,21 @@ const Calculator = () => {
   const [productName, setProductName] = useState('');
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionType, setTransactionType] = useState<'credit' | 'debit'>('credit');
+  
+  const {
+    transcript,
+    isListening,
+    startRecognition,
+    stopRecognition,
+    isSupported,
+  } = useRecognition({
+    onResult: (text: string) => {
+        const numbers = text.match(/\d+/g);
+        if (numbers) {
+            setTransactionAmount(numbers.join(''));
+        }
+    }
+  });
 
 
   useEffect(() => {
@@ -257,8 +273,7 @@ const Calculator = () => {
   
     const svgString = new XMLSerializer().serializeToString(svgElement);
     const decodedSvg = unescape(encodeURIComponent(svgString));
-    const svgBase64 = btoa(decodedSvg);
-    const url = 'data:image/svg+xml;base64,' + svgBase64;
+    const url = 'data:image/svg+xml;base64,' + btoa(decodedSvg);
   
     const img = new Image();
     img.onload = async () => {
@@ -293,13 +308,13 @@ const Calculator = () => {
           files: [file],
         };
 
-        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        if (navigator.share && navigator.canShare(shareData)) {
             await navigator.share(shareData);
         } else {
            toast({
               variant: "destructive",
               title: "Sharing Not Supported",
-              description: "Your browser does not support sharing.",
+              description: "Your browser does not support sharing files.",
             });
         }
 
@@ -331,6 +346,22 @@ const Calculator = () => {
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
+
+  const handleMicClick = () => {
+    if (!isSupported) {
+        toast({
+            variant: "destructive",
+            title: "Voice Recognition Not Supported",
+            description: "Your browser does not support voice recognition.",
+        });
+        return;
+    }
+    if (isListening) {
+        stopRecognition();
+    } else {
+        startRecognition();
+    }
+  }
 
   return (
     <div className="bg-background p-4 rounded-3xl shadow-2xl w-full max-w-sm">
@@ -482,7 +513,7 @@ const Calculator = () => {
           <DialogHeader>
             <DialogTitle>Add to Khata Book</DialogTitle>
             <DialogDescription>
-              Manually record a transaction for your customer.
+              Manually record a transaction for your customer. {isListening && 'Listening...'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -514,14 +545,19 @@ const Calculator = () => {
               <Label htmlFor="amount" className="text-right">
                 Amount
               </Label>
-              <Input
-                id="amount"
-                type="number"
-                value={transactionAmount}
-                onChange={(e) => setTransactionAmount(e.target.value)}
-                className="col-span-3"
-                placeholder="₹"
-              />
+              <div className="col-span-3 flex items-center gap-2">
+                <Input
+                  id="amount"
+                  type="number"
+                  value={transactionAmount}
+                  onChange={(e) => setTransactionAmount(e.target.value)}
+                  className="w-full"
+                  placeholder="₹"
+                />
+                <Button variant={isListening ? 'destructive' : 'outline'} size="icon" onClick={handleMicClick}>
+                    <Mic className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">Type</Label>
@@ -553,3 +589,5 @@ const Calculator = () => {
 };
 
 export default Calculator;
+
+    
