@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from './ui/button';
-import { Moon, Sun, User, Pencil, Share2, Divide, Book } from 'lucide-react';
+import { Moon, Sun, User, Pencil, Share2, Divide, Book, Mic } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, useDatabase } from '@/firebase';
-import { ref, onValue, set } from 'firebase/database';
+import { ref, onValue, set, get } from 'firebase/database';
 import QRCode from "react-qr-code";
 import {
   AlertDialog,
@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { AddTransactionDialog } from './add-transaction-dialog';
 import { generateQrCodeImage } from '@/lib/qr-code-generator';
+import { useRecognition } from '@/hooks/use-recognition';
 
 
 type Operator = '+' | '-' | '×' | '÷';
@@ -54,6 +55,68 @@ const Calculator = () => {
   const [status, setStatus] = useState('inactive');
   
   const [isKhataBookOpen, setIsKhataBookOpen] = useState(false);
+
+  const onRecognitionResult = useCallback(async (text: string) => {
+    if (!user || !db) return;
+  
+    const formattedName = text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+  
+    const customersRef = ref(db, `khata/${user.uid}/customers`);
+    const snapshot = await get(customersRef);
+    if (snapshot.exists()) {
+      const customers = snapshot.val();
+      const customerNames = Object.keys(customers);
+      const foundCustomer = customerNames.find(name => name.toLowerCase() === formattedName.toLowerCase());
+      
+      if (foundCustomer) {
+        // Play beep sound
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4 pitch
+        oscillator.connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.1); // Beep for 100ms
+
+        router.push(`/khata/${encodeURIComponent(foundCustomer)}`);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Customer Not Found",
+          description: `Could not find a customer named "${formattedName}".`,
+        });
+      }
+    } else {
+        toast({
+            variant: "destructive",
+            title: "No Customers",
+            description: "You have not added any customers to your Khata book yet.",
+        });
+    }
+  }, [user, db, router, toast]);
+
+  const {
+    isListening,
+    startRecognition,
+    stopRecognition,
+    isSupported,
+  } = useRecognition({ onResult: onRecognitionResult });
+
+  const handleCustomerLookup = () => {
+    if (!isSupported) {
+      toast({
+        variant: 'destructive',
+        title: 'Voice Recognition Not Supported',
+        description: 'Your browser does not support voice recognition.',
+      });
+      return;
+    }
+    if (isListening) {
+      stopRecognition();
+    } else {
+      startRecognition();
+    }
+  };
   
 
   useEffect(() => {
@@ -340,6 +403,16 @@ const Calculator = () => {
         <Button onClick={handleDecimalClick} className={defaultButtonClass}>.</Button>
         <Button onClick={openKhataBook} className={`${opButtonClass} w-auto`}><Book /></Button>
         <Button onClick={handleEqualsClick} className={opButtonClass}>=</Button>
+      </div>
+      <div className="p-2 flex justify-center">
+         <Button
+            onClick={handleCustomerLookup}
+            variant={isListening ? 'destructive' : 'outline'}
+            className="w-full h-14 rounded-full text-lg"
+          >
+            <Mic className="mr-2 h-5 w-5" />
+            {isListening ? 'Listening...' : 'Customer Lookup'}
+          </Button>
       </div>
 
       <Dialog open={isQrCodeVisible} onOpenChange={setIsQrCodeVisible}>
