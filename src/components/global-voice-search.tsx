@@ -99,15 +99,16 @@ export function GlobalVoiceSearch() {
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
         <Button
           onClick={handleCustomerLookup}
-          variant={isListening ? 'destructive' : 'default'}
           size="icon"
-          className="rounded-full h-16 w-16 shadow-lg bg-primary hover:bg-primary/90"
+          className={`rounded-full h-20 w-20 shadow-lg text-white ${
+            isListening ? 'animate-pulse-listen bg-red-600' : 'animate-pulse-wait bg-blue-600'
+          }`}
           aria-label="Customer Voice Search"
         >
-          <Mic className="h-8 w-8" />
+          <Mic className="h-10 w-10" />
         </Button>
       </div>
 
