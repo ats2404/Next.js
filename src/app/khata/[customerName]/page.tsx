@@ -96,6 +96,17 @@ export default function CustomerDetailPage() {
         return tx.type === 'credit' ? acc + tx.amount : acc - tx.amount;
     }, 0);
   }
+  
+  const handleReminder = () => {
+    if (!mobileNumber) {
+        alert("Customer mobile number not available.");
+        return;
+    }
+    const message = `Hello ${customerName}, this is a friendly reminder that your outstanding balance is ₹${Math.abs(balance)}. Please make a payment at your earliest convenience. Thank you!`;
+    const whatsappUrl = `https://wa.me/${mobileNumber.startsWith('91') ? '' : '91'}${mobileNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-950">
@@ -148,7 +159,7 @@ export default function CustomerDetailPage() {
                     <IndianRupee className="h-6 w-6 mb-1" />
                     <span className="text-xs">पेमेंट</span>
                 </Button>
-                 <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
+                 <Button onClick={handleReminder} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <WhatsAppIcon className="h-6 w-6 mb-1" />
                     <span className="text-xs">रिमाइंडर</span>
                 </Button>
@@ -209,3 +220,5 @@ export default function CustomerDetailPage() {
     </div>
   );
 }
+
+    
