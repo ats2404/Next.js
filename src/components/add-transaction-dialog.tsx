@@ -17,7 +17,7 @@ import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useRecognition } from '@/hooks/use-recognition';
-import { Mic, Phone } from 'lucide-react';
+import { Mic, Phone, Contact } from 'lucide-react';
 
 interface AddTransactionDialogProps {
   isOpen: boolean;
@@ -43,7 +43,7 @@ export function AddTransactionDialog({
   const [productName, setProductName] = useState('');
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionType, setTransactionType] = useState<'credit' | 'debit'>(defaultTransactionType);
-  const [fieldToUpdate, setFieldToUpdate] = useState<'customerName' | 'amount' | 'productName' | null>(null);
+  const [fieldToUpdate, setFieldToUpdate] = useState<'amount' | 'productName' | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -62,10 +62,6 @@ export function AddTransactionDialog({
       if (numbers) {
         setTransactionAmount(numbers.join(''));
       }
-    } else if (fieldToUpdate === 'customerName') {
-        // Capitalize first letter of each word
-        const formattedName = text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
-        setCustomerName(formattedName);
     } else if (fieldToUpdate === 'productName') {
         setProductName(text);
     }
@@ -80,6 +76,36 @@ export function AddTransactionDialog({
   } = useRecognition({
     onResult: onRecognitionResult,
   });
+
+  const handlePickContact = async () => {
+    if ('contacts' in navigator && 'select' in navigator.contacts) {
+      try {
+        const contacts = await (navigator.contacts as any).select(['name', 'tel'], { multiple: false });
+        if (contacts.length > 0) {
+          const contact = contacts[0];
+          if (contact.name && contact.name.length > 0) {
+            setCustomerName(contact.name[0]);
+          }
+          if (contact.tel && contact.tel.length > 0) {
+            const formattedNumber = contact.tel[0].replace(/\s+/g, '').slice(-10);
+            setMobileNumber(formattedNumber);
+          }
+        }
+      } catch (ex) {
+        toast({
+            variant: 'destructive',
+            title: 'Contact Picker Failed',
+            description: 'Could not pick a contact. Please enter details manually.',
+        });
+      }
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Unsupported Feature',
+        description: 'The Contact Picker API is not supported on your browser.',
+      });
+    }
+  };
 
   const handleSaveTransaction = async () => {
     if (!user || !db) {
@@ -128,7 +154,7 @@ export function AddTransactionDialog({
   };
 
 
-  const handleMicClick = (field: 'customerName' | 'amount' | 'productName') => {
+  const handleMicClick = (field: 'amount' | 'productName') => {
     if (!isSupported) {
       toast({
         variant: 'destructive',
@@ -152,7 +178,7 @@ export function AddTransactionDialog({
         <DialogHeader>
           <DialogTitle>Add to Khata Book</DialogTitle>
           <DialogDescription>
-            Manually record a transaction for your customer. {isListening && `Listening for ${fieldToUpdate === 'customerName' ? 'customer name' : fieldToUpdate === 'amount' ? 'amount' : 'product name'}...`}
+            Manually record a transaction for your customer. {isListening && `Listening for ${fieldToUpdate === 'amount' ? 'amount' : 'product name'}...`}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -170,8 +196,8 @@ export function AddTransactionDialog({
                 readOnly={!!defaultCustomerName}
                 />
                 {!defaultCustomerName && (
-                    <Button variant={isListening && fieldToUpdate === 'customerName' ? 'destructive' : 'outline'} size="icon" onClick={() => handleMicClick('customerName')}>
-                        <Mic className="h-4 w-4" />
+                    <Button variant='outline' size="icon" onClick={handlePickContact}>
+                        <Contact className="h-4 w-4" />
                     </Button>
                 )}
             </div>
