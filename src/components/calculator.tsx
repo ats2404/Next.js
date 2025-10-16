@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Moon, Sun, User, Pencil, Share2, Divide, Book } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useUser, useAuth } from '@/firebase';
-import { getDatabase, ref, onValue, set } from 'firebase/database';
+import { useUser, useAuth, useDatabase } from '@/firebase';
+import { getDatabase, ref, onValue, set, push, serverTimestamp } from 'firebase/database';
 import QRCode from "react-qr-code";
 import {
   AlertDialog,
@@ -22,8 +22,13 @@ import {
   Dialog,
   DialogContent,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -36,6 +41,7 @@ const Calculator = () => {
   const [expression, setExpression] = useState('');
   const { user } = useUser();
   const auth = useAuth();
+  const db = useDatabase();
   const router = useRouter();
   const { toast } = useToast();
   const [shopName, setShopName] = useState('');
@@ -49,7 +55,12 @@ const Calculator = () => {
   const [paymentAmount, setPaymentAmount] = useState('0');
   const qrCodeRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState('inactive');
-  const db = getDatabase();
+  
+  const [isKhataBookOpen, setIsKhataBookOpen] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [productName, setProductName] = useState('');
+  const [transactionAmount, setTransactionAmount] = useState('');
+  const [transactionType, setTransactionType] = useState<'credit' | 'debit'>('credit');
 
 
   useEffect(() => {
@@ -94,6 +105,39 @@ const Calculator = () => {
           toast({ variant: "destructive", title: "Error", description: "Failed to update UPI ID." });
         });
     }
+  };
+
+  const handleSaveTransaction = () => {
+    if (!user || !db) {
+        toast({ variant: "destructive", title: "Error", description: "You must be logged in to save transactions." });
+        return;
+    }
+
+    if (!customerName || !productName || !transactionAmount) {
+        toast({ variant: "destructive", title: "Error", description: "Please fill all fields." });
+        return;
+    }
+
+    const transactionsRef = ref(db, `khata/${user.uid}`);
+    const newTransactionRef = push(transactionsRef);
+    
+    set(newTransactionRef, {
+        customerName,
+        productName,
+        amount: parseFloat(transactionAmount),
+        type: transactionType,
+        timestamp: serverTimestamp(),
+    }).then(() => {
+        toast({ title: "Success", description: "Transaction saved successfully." });
+        setIsKhataBookOpen(false);
+        // Reset form
+        setCustomerName('');
+        setProductName('');
+        setTransactionAmount('');
+        setTransactionType('credit');
+    }).catch((error) => {
+        toast({ variant: "destructive", title: "Error", description: `Failed to save transaction: ${error.message}` });
+    });
   };
 
   const handleNumberClick = (num: string) => {
@@ -201,31 +245,6 @@ const Calculator = () => {
     }
   };
 
-  const handleBackspaceClick = () => {
-    if (displayValue.length > 1) {
-      const newValue = displayValue.slice(0, -1);
-      setDisplayValue(newValue);
-      setExpression(prev => prev.slice(0, -1));
-    } else {
-      setDisplayValue('0');
-      if (expression.length <= 1) {
-          setExpression('');
-      } else {
-          // This part is tricky. A simple slice might not work for complex expressions.
-          // For now, we reset if expression is a single number.
-          const lastOpIndex = Math.max(expression.lastIndexOf('+'), expression.lastIndexOf('-'), expression.lastIndexOf('×'), expression.lastIndexOf('÷'));
-          if (lastOpIndex === -1) {
-             setExpression(prev => prev.slice(0, -1));
-          } else if (expression.length - 1 === lastOpIndex) {
-             // do nothing, we are at an operator
-          }
-          else {
-            setExpression(prev => prev.slice(0, -1));
-          }
-      }
-    }
-  };
-
   const handleShare = async () => {
     if (!qrCodeRef.current) return;
   
@@ -313,13 +332,6 @@ const Calculator = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
-  const handleKhataBookClick = () => {
-    toast({
-        title: "Coming Soon!",
-        description: "Khata Book functionality will be available soon."
-    });
-  }
-
   return (
     <div className="bg-background p-4 rounded-3xl shadow-2xl w-full max-w-sm">
       <div className="mb-4 flex justify-between items-center px-2">
@@ -399,7 +411,7 @@ const Calculator = () => {
         
         <Button onClick={() => handleNumberClick('0')} className={defaultButtonClass}>0</Button>
         <Button onClick={handleDecimalClick} className={defaultButtonClass}>.</Button>
-        <Button onClick={handleKhataBookClick} className={`${opButtonClass} w-auto`}><Book /></Button>
+        <Button onClick={() => setIsKhataBookOpen(true)} className={`${opButtonClass} w-auto`}><Book /></Button>
         <Button onClick={handleEqualsClick} className={opButtonClass}>=</Button>
       </div>
 
@@ -464,6 +476,78 @@ const Calculator = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isKhataBookOpen} onOpenChange={setIsKhataBookOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add to Khata Book</DialogTitle>
+            <DialogDescription>
+              Manually record a transaction for your customer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="customer-name" className="text-right">
+                Customer
+              </Label>
+              <Input
+                id="customer-name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="col-span-3"
+                placeholder="Customer Name"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="product-name" className="text-right">
+                Product
+              </Label>
+              <Input
+                id="product-name"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                className="col-span-3"
+                placeholder="Product Name/Details"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="amount" className="text-right">
+                Amount
+              </Label>
+              <Input
+                id="amount"
+                type="number"
+                value={transactionAmount}
+                onChange={(e) => setTransactionAmount(e.target.value)}
+                className="col-span-3"
+                placeholder="₹"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Type</Label>
+                <RadioGroup
+                    defaultValue="credit"
+                    className="col-span-3 flex gap-4"
+                    value={transactionType}
+                    onValueChange={(value: 'credit' | 'debit') => setTransactionType(value)}
+                >
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="credit" id="r1" />
+                        <Label htmlFor="r1">Credit (Jama)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="debit" id="r2" />
+                        <Label htmlFor="r2">Debit (Udhar)</Label>
+                    </div>
+                </RadioGroup>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsKhataBookOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveTransaction}>Save Transaction</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
