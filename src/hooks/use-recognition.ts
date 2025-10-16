@@ -33,35 +33,42 @@ interface UseRecognitionProps {
 export const useRecognition = ({ onResult, continuous = false }: UseRecognitionProps) => {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // A ref to track if the user intentionally stopped the recognition
+  const stoppedManuallyRef = useRef(false);
 
   const isSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
   const stopRecognition = useCallback(() => {
     if (recognitionRef.current && isListening) {
+      stoppedManuallyRef.current = true;
       recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  }, [isListening]);
+  
+  const startRecognition = useCallback(() => {
+    if (recognitionRef.current && !isListening) {
+      try {
+        stoppedManuallyRef.current = false;
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch(e) {
+        console.error("Could not start recognition", e);
+        setIsListening(false);
+      }
     }
   }, [isListening]);
 
-  const onEnd = useCallback(() => {
-    setIsListening(false);
-    if (continuous && recognitionRef.current) {
-        // If continuous is true, restart recognition after it ends.
-        // This handles cases where the browser might time it out.
-        try {
-            recognitionRef.current.start();
-        } catch (e) {
-            console.error("Could not restart recognition", e);
-        }
-    }
-  }, [continuous]);
 
   useEffect(() => {
     if (!isSupported) {
+      console.warn("Speech recognition is not supported in this browser.");
       return;
     }
 
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) {
+      console.warn("Speech recognition is not available.");
       return;
     }
     
@@ -80,44 +87,36 @@ export const useRecognition = ({ onResult, continuous = false }: UseRecognitionP
       if (finalTranscript) {
         onResult(finalTranscript.trim());
       }
-      if (!continuous) {
-        stopRecognition();
-      }
+      // In non-continuous mode, it will stop via the onend event.
     };
 
     recognition.onerror = (event) => {
-      if (event.error === 'no-speech') {
-        // Ignore no-speech errors in continuous mode to allow restart
-        if (continuous) return;
-      }
-      console.error('Speech recognition error', event.error);
-      stopRecognition();
+      // Errors like 'no-speech' or 'network' can stop the service.
+      // We'll let the onend handler deal with restarting.
+      console.error('Speech recognition error:', event.error);
     };
 
     recognition.onend = () => {
-      onEnd();
+      setIsListening(false);
+      // If continuous mode is on AND it wasn't stopped manually, restart it.
+      // This handles cases where the browser times it out after a period of silence.
+      if (continuous && !stoppedManuallyRef.current) {
+        startRecognition();
+      }
     };
 
     recognitionRef.current = recognition;
 
+    // Cleanup: stop recognition when the component unmounts.
     return () => {
-      recognition.stop();
-    }
-    
-  }, [isSupported, onResult, continuous, stopRecognition, onEnd]);
-  
-  const startRecognition = useCallback(() => {
-    if (recognitionRef.current && !isListening) {
-      try {
-        recognitionRef.current.start();
-        setIsListening(true);
-      } catch(e) {
-        // This can happen if start() is called while it's already starting
-        console.error("Could not start recognition", e);
+      if (recognitionRef.current) {
+        stoppedManuallyRef.current = true; // Prevent restart on unmount
+        recognitionRef.current.stop();
       }
     }
-  }, [isListening]);
-
+    
+  }, [isSupported, onResult, continuous, startRecognition]);
+  
 
   return {
     isListening,
