@@ -146,7 +146,7 @@ export default function KhataPage() {
             <div className="p-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input placeholder="ग्राहक खोजें" className="pl-10 h-12" />
+                <Input placeholder="ग्राहक खोजे" className="pl-10 h-12" />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
                   <Button variant="ghost" className="text-muted-foreground gap-1">
                     <Filter className="h-4 w-4" />
