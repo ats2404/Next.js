@@ -219,7 +219,7 @@ export default function CustomerDetailPage() {
                     <FileText className="h-6 w-6 mb-1" />
                     <span className="text-xs">रिपोर्ट</span>
                 </Button>
-                 <Button variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
+                 <Button onClick={() => toast({ title: 'Coming Soon!', description: 'This feature will be available shortly.' })} variant="ghost" className="flex flex-col h-auto items-center text-muted-foreground">
                     <IndianRupee className="h-6 w-6 mb-1" />
                     <span className="text-xs">पेमेंट</span>
                 </Button>
