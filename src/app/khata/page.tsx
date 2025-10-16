@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { AddTransactionDialog } from '@/components/add-transaction-dialog';
 
 
 export default function KhataPage() {
@@ -27,6 +28,8 @@ export default function KhataPage() {
   const [totalCredit, setTotalCredit] = useState(0);
   const [totalDebit, setTotalDebit] = useState(0);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
+
 
   useEffect(() => {
     if (isUserLoading) return;
@@ -168,7 +171,10 @@ export default function KhataPage() {
       </main>
 
        <div className="fixed bottom-20 right-6">
-        <Button className="rounded-full h-16 w-auto px-6 bg-red-600 hover:bg-red-700 text-white shadow-lg">
+        <Button 
+          className="rounded-full h-16 w-auto px-6 bg-red-600 hover:bg-red-700 text-white shadow-lg"
+          onClick={() => setIsAddTransactionOpen(true)}
+        >
           <UserPlus className="h-6 w-6 mr-2" />
           ग्राहक जोड़ें
         </Button>
@@ -185,6 +191,11 @@ export default function KhataPage() {
             <span className="text-xs">लान</span>
           </Button>
       </footer>
+
+      <AddTransactionDialog 
+        isOpen={isAddTransactionOpen}
+        onOpenChange={setIsAddTransactionOpen}
+      />
     </div>
   );
 }
