@@ -73,6 +73,19 @@ const Calculator = () => {
       const foundCustomer = customerNames.find(name => name.toLowerCase() === formattedName.toLowerCase());
       
       if (foundCustomer) {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (audioContext) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // Lower volume
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
         setHistoryCustomerName(foundCustomer);
         setIsHistoryDialogOpen(true);
 
