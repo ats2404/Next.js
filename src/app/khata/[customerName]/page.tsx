@@ -253,10 +253,10 @@ export default function CustomerDetailPage() {
                                     बैलेंस ₹{getBalanceAfterTransaction(index).toLocaleString()}
                                 </p>
                             </div>
-                            <div className={`col-span-1 text-center font-bold text-red-500 ${tx.type === 'debit' ? 'visible' : 'invisible'}`}>
+                            <div className={`col-span-1 text-center font-bold text-red-500 ${tx.type === 'debit' ? 'visible animate-slide-in-fade' : 'invisible'}`}>
                                 ₹{tx.amount.toLocaleString()}
                             </div>
-                             <div className={`col-span-1 text-center font-bold text-green-500 ${tx.type === 'credit' ? 'visible' : 'invisible'}`}>
+                             <div className={`col-span-1 text-center font-bold text-green-500 ${tx.type === 'credit' ? 'visible animate-slide-in-fade' : 'invisible'}`}>
                                 ₹{tx.amount.toLocaleString()}
                             </div>
                         </CardContent>
