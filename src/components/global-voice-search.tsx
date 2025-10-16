@@ -104,7 +104,9 @@ export function GlobalVoiceSearch() {
           onClick={handleCustomerLookup}
           size="icon"
           className={`rounded-full h-20 w-20 shadow-lg text-white ${
-            isListening ? 'animate-pulse-listen bg-red-600' : 'animate-pulse-wait bg-blue-600'
+            isListening 
+            ? 'animate-pulse-listen bg-red-600' 
+            : 'animate-gradient bg-gradient-to-r from-cyan-500 to-blue-500'
           }`}
           aria-label="Customer Voice Search"
         >
