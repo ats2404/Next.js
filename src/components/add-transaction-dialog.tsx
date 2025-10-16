@@ -43,7 +43,7 @@ export function AddTransactionDialog({
   const [productName, setProductName] = useState('');
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionType, setTransactionType] = useState<'credit' | 'debit'>(defaultTransactionType);
-  const [fieldToUpdate, setFieldToUpdate] = useState<'customerName' | 'amount' | null>(null);
+  const [fieldToUpdate, setFieldToUpdate] = useState<'customerName' | 'amount' | 'productName' | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -66,6 +66,8 @@ export function AddTransactionDialog({
         // Capitalize first letter of each word
         const formattedName = text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
         setCustomerName(formattedName);
+    } else if (fieldToUpdate === 'productName') {
+        setProductName(text);
     }
     setFieldToUpdate(null);
   }, [fieldToUpdate]);
@@ -126,7 +128,7 @@ export function AddTransactionDialog({
   };
 
 
-  const handleMicClick = (field: 'customerName' | 'amount') => {
+  const handleMicClick = (field: 'customerName' | 'amount' | 'productName') => {
     if (!isSupported) {
       toast({
         variant: 'destructive',
@@ -150,7 +152,7 @@ export function AddTransactionDialog({
         <DialogHeader>
           <DialogTitle>Add to Khata Book</DialogTitle>
           <DialogDescription>
-            Manually record a transaction for your customer. {isListening && `Listening for ${fieldToUpdate === 'customerName' ? 'customer name' : 'amount'}...`}
+            Manually record a transaction for your customer. {isListening && `Listening for ${fieldToUpdate === 'customerName' ? 'customer name' : fieldToUpdate === 'amount' ? 'amount' : 'product name'}...`}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -196,13 +198,18 @@ export function AddTransactionDialog({
             <Label htmlFor="product-name" className="text-right">
               Product
             </Label>
-            <Input
-              id="product-name"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              className="col-span-3"
-              placeholder="Product Name/Details"
-            />
+            <div className="col-span-3 flex items-center gap-2">
+                <Input
+                id="product-name"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                className="w-full"
+                placeholder="Product Name/Details"
+                />
+                <Button variant={isListening && fieldToUpdate === 'productName' ? 'destructive' : 'outline'} size="icon" onClick={() => handleMicClick('productName')}>
+                    <Mic className="h-4 w-4" />
+                </Button>
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="amount" className="text-right">
