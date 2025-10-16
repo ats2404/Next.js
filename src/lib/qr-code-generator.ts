@@ -25,6 +25,12 @@ export const generateQrCodeImage = async (
                     return;
                 }
 
+                // Load Poppins font
+                const font = new FontFace('Poppins', 'url(https://fonts.gstatic.com/s/poppins/v21/pxiByp8kv8JHgFVrLBT5Z1xlFQ.woff2)');
+                await font.load();
+                document.fonts.add(font);
+
+
                 const qrSize = 256;
                 const padding = 20;
                 const topSectionHeight = 80;
@@ -37,11 +43,11 @@ export const generateQrCodeImage = async (
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = 'black';
-                ctx.font = 'bold 24px Poppins, sans-serif';
+                ctx.font = 'bold 24px Poppins';
                 ctx.textAlign = 'center';
                 ctx.fillText(shopName, canvas.width / 2, 40);
 
-                ctx.font = 'bold 36px Poppins, sans-serif';
+                ctx.font = 'bold 36px Poppins';
                 ctx.fillText(`₹${amount}`, canvas.width / 2, 80);
 
                 ctx.drawImage(img, padding, topSectionHeight, qrSize, qrSize);
@@ -64,3 +70,5 @@ export const generateQrCodeImage = async (
         return null;
     }
 }
+
+    
