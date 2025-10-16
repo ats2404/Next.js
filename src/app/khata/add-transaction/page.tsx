@@ -22,7 +22,7 @@ export default function AddTransactionPage() {
   const searchParams = useSearchParams();
 
   const defaultCustomerName = searchParams.get('customerName') || '';
-  const defaultTransactionType = (searchParams.get('type') as 'credit' | 'debit') || 'credit';
+  const defaultTransactionType = (searchParams.get('type') as 'credit' | 'debit') || 'debit';
 
   const [customerName, setCustomerName] = useState(defaultCustomerName);
   const [mobileNumber, setMobileNumber] = useState('');
@@ -247,12 +247,12 @@ export default function AddTransactionPage() {
                     onValueChange={(value: 'credit' | 'debit') => setTransactionType(value)}
                     >
                     <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="credit" id="r1" />
-                        <Label htmlFor="r1">Credit (Jama)</Label>
+                        <RadioGroupItem value="debit" id="r2" />
+                        <Label htmlFor="r2" className="text-red-500">Debit (Udhar)</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="debit" id="r2" />
-                        <Label htmlFor="r2">Debit (Udhar)</Label>
+                        <RadioGroupItem value="credit" id="r1" />
+                        <Label htmlFor="r1" className="text-green-500">Credit (Jama)</Label>
                     </div>
                     </RadioGroup>
                 </div>
