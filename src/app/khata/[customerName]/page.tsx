@@ -12,6 +12,8 @@ import { ChevronLeft, Phone, Calendar, FileText, IndianRupee, MessageSquare } fr
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateQrCodeImage } from '@/lib/qr-code-generator';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 
 // A simple WhatsApp icon component
@@ -121,33 +123,62 @@ export default function CustomerDetailPage() {
       toast({ variant: "destructive", title: "No Transactions", description: "There is no data to generate a report." });
       return;
     }
+    
+    // Base64 encoded logo image
+    const logo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAABJklEQVR4AWP4v5QABvj/V466cPz/VwZk8R8owv/V/2f/VwY0gP8z/P9fNvB/Of/fLwzL/wEaIPAPaID/Z/p/M8AABjTA/zP9/8P/VwY0wP8z/V8G/x8Z/j+D9V8G/v+D9l8G+P+n7b8M8P9v3n8Z4P9/1P4ZIIA/BP//J/T/D/p/A/z/k/7fDPD/T/p/M8D/P+n/DQMDwzUgb/D/T/l/M8D/P+X/zQADGMD/mf4fYP9v+38zwP8/af8NEID/Z/r/h/1/Yf83AwPDoQEGgP9n+v+H/X9h/zcDA8MhIMD/M/3/w/6/sP+bAQYwwP8z/f/D/r+w/5sBBjDA/zP9/0P6/4b9f2H/NwMDwzGgAf4fYP9f2P+dAQYwwP9n+v+H/X9h/zcjowGGAAA6YxNDOk0K7wAAAABJRU5ErkJggg==';
 
-    let csvContent = "data:text/csv;charset=utf-8,Date,Product,Amount Given (Debit),Amount Received (Credit),Balance\n";
+    const doc = new jsPDF();
+    
+    // Add logo
+    doc.addImage(logo, 'PNG', 14, 15, 20, 20);
 
-    // Since transactions are sorted descending, we reverse for chronological report
+    // Add Shop Name
+    doc.setFontSize(22);
+    doc.text(shopName, 40, 25);
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text(`Report for: ${customerName}`, 40, 32);
+
+    // Final Balance
+    doc.setFontSize(14);
+    const finalBalanceText = `Final Balance: ₹${balance.toLocaleString()}`;
+    const finalBalanceColor = balance < 0 ? [255, 0, 0] : [0, 128, 0];
+    doc.setTextColor(finalBalanceColor[0], finalBalanceColor[1], finalBalanceColor[2]);
+    doc.text(finalBalanceText, doc.internal.pageSize.getWidth() - 14, 28, { align: 'right' });
+    doc.setTextColor(0);
+
     const chronologicalTransactions = [...transactions].reverse();
     let runningBalance = 0;
 
-    chronologicalTransactions.forEach((tx: any) => {
+    const tableData = chronologicalTransactions.map((tx: any) => {
       const isDebit = tx.type === 'debit';
       runningBalance += isDebit ? -tx.amount : tx.amount;
-
-      const date = format(new Date(tx.timestamp), 'yyyy-MM-dd HH:mm:ss');
-      const productName = `"${tx.productName.replace(/"/g, '""')}"`; // Escape double quotes
-      const debitAmount = isDebit ? tx.amount : '';
-      const creditAmount = !isDebit ? tx.amount : '';
       
-      csvContent += `${date},${productName},${debitAmount},${creditAmount},${runningBalance}\n`;
+      return [
+        format(new Date(tx.timestamp), 'dd/MM/yy, hh:mm a'),
+        tx.productName,
+        isDebit ? `₹${tx.amount.toLocaleString()}` : '',
+        !isDebit ? `₹${tx.amount.toLocaleString()}` : '',
+        `₹${runningBalance.toLocaleString()}`
+      ];
     });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `report-${customerName}.csv`);
-    document.body.appendChild(link);
+    (doc as any).autoTable({
+        head: [['Date & Time', 'Details', 'Debit (Given)', 'Credit (Received)', 'Balance']],
+        body: tableData,
+        startY: 45,
+        headStyles: { fillColor: [22, 160, 133] },
+        styles: { halign: 'center' },
+        columnStyles: {
+            0: { halign: 'left' },
+            1: { halign: 'left' },
+            2: { halign: 'right', textColor: [255,0,0] },
+            3: { halign: 'right', textColor: [0,128,0] },
+            4: { halign: 'right' }
+        },
+    });
 
-    link.click();
-    document.body.removeChild(link);
+    doc.save(`report-${customerName}.pdf`);
   };
   
   const handleReminder = async (via: 'whatsapp' | 'sms') => {
@@ -312,3 +343,5 @@ export default function CustomerDetailPage() {
     </div>
   );
 }
+
+    
