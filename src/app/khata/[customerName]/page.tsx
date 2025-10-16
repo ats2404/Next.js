@@ -158,7 +158,7 @@ export default function CustomerDetailPage() {
                 text: reminderText,
             });
         } else {
-             const whatsappLink = `https://wa.me/${mobileNumber}?text=${encodeURIComponent(reminderText)}`;
+             const whatsappLink = `https://wa.me/91${mobileNumber}?text=${encodeURIComponent(reminderText)}`;
              window.open(whatsappLink, '_blank');
         }
     } catch (error) {
