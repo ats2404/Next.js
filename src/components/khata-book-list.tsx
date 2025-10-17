@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useLanguage } from '@/context/language-context';
 
 interface KhataBookListProps {
+  customers: Record<string, {name: string, mobileNumber: string}>;
   transactions: any[];
 }
 
@@ -19,11 +20,16 @@ interface CustomerSummary {
   lastActivity: string;
 }
 
-export function KhataBookList({ transactions }: KhataBookListProps) {
+export function KhataBookList({ customers, transactions }: KhataBookListProps) {
   const { t } = useLanguage();
   
   const customerData = useMemo(() => {
     const customerMap = new Map<string, { balance: number; lastTimestamp: number }>();
+
+    // Initialize all customers from the customers object
+    Object.keys(customers).forEach(customerName => {
+        customerMap.set(customerName, { balance: 0, lastTimestamp: 0 });
+    });
 
     transactions.forEach(tx => {
       const { customerName, amount, type, timestamp } = tx;
@@ -34,7 +40,7 @@ export function KhataBookList({ transactions }: KhataBookListProps) {
       
       customerMap.set(customerName, {
         balance: current.balance + transactionAmount,
-        lastTimestamp: Math.max(current.lastTimestamp, timestamp / 1000),
+        lastTimestamp: Math.max(current.lastTimestamp, timestamp),
       });
     });
 
@@ -42,18 +48,17 @@ export function KhataBookList({ transactions }: KhataBookListProps) {
       return {
         name,
         balance: data.balance,
-        lastActivity: data.lastTimestamp ? formatDistanceToNow(fromUnixTime(data.lastTimestamp), { addSuffix: true }) : t('noActivity'),
+        lastActivity: data.lastTimestamp ? formatDistanceToNow(new Date(data.lastTimestamp), { addSuffix: true }) : t('noActivity'),
       };
     }).sort((a, b) => {
-        // Find latest timestamp for each customer to sort by recent activity
-        const lastTimestampA = Math.max(...transactions.filter(t => t.customerName === a.name).map(t => t.timestamp));
-        const lastTimestampB = Math.max(...transactions.filter(t => t.customerName === b.name).map(t => t.timestamp));
+        const lastTimestampA = customerMap.get(a.name)?.lastTimestamp || 0;
+        const lastTimestampB = customerMap.get(b.name)?.lastTimestamp || 0;
         return lastTimestampB - lastTimestampA;
     });
 
     return sortedCustomers;
 
-  }, [transactions, t]);
+  }, [customers, transactions, t]);
 
 
   if (customerData.length === 0) {
@@ -84,6 +89,9 @@ export function KhataBookList({ transactions }: KhataBookListProps) {
                 )}
                 {customer.balance > 0 && (
                     <p className="text-xs text-green-500">{t('advance')}</p>
+                )}
+                 {customer.balance === 0 && (
+                    <p className="text-xs text-muted-foreground">Settled</p>
                 )}
                 </div>
             </CardContent>
