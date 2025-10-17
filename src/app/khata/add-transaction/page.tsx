@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useUser, useDatabase } from '@/firebase';
-import { ref, push, set, serverTimestamp, get, child } from 'firebase/database';
+import { ref, push, set, serverTimestamp, get, child, update } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,7 +36,16 @@ export default function AddTransactionPage() {
   useEffect(() => {
     setCustomerName(defaultCustomerName);
     setTransactionType(defaultTransactionType);
-  }, [defaultCustomerName, defaultTransactionType]);
+    if (defaultCustomerName && user && db) {
+      const customerRef = ref(db, `khata/${user.uid}/customers/${defaultCustomerName}`);
+      get(customerRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          setMobileNumber(data.mobileNumber || '');
+        }
+      });
+    }
+  }, [defaultCustomerName, defaultTransactionType, user, db]);
   
   const onRecognitionResult = useCallback((text: string) => {
     if (fieldToUpdate === 'amount') {
@@ -71,7 +80,6 @@ export default function AddTransactionPage() {
             setCustomerName(contact.name[0]);
           }
           if (contact.tel && contact.tel.length > 0) {
-            // Remove spaces, hyphens, and parentheses, and take the last 10 digits.
             const formattedNumber = contact.tel[0].replace(/[\s-()]/g, '').slice(-10);
             setMobileNumber(formattedNumber);
           }
@@ -109,27 +117,39 @@ export default function AddTransactionPage() {
 
     const transactionsRef = ref(db, `khata/${user.uid}/transactions`);
     const customersRef = ref(db, `khata/${user.uid}/customers`);
+    const customerRef = child(customersRef, customerName);
     
     try {
-        const snapshot = await get(child(customersRef, customerName));
+        const snapshot = await get(customerRef);
         if (!snapshot.exists()) {
-            await set(child(customersRef, customerName), {
+            await set(customerRef, {
                 name: customerName,
+                mobileNumber: finalMobileNumber,
+            });
+        } else {
+             await update(customerRef, {
                 mobileNumber: finalMobileNumber,
             });
         }
         
-        const newTransactionRef = push(transactionsRef);
-        await set(newTransactionRef, {
-          customerName,
-          productName: finalProductName,
-          amount: finalAmount,
-          type: transactionType,
-          timestamp: serverTimestamp(),
-        });
+        // Only add transaction if there is a product or amount
+        if (productName.trim() !== '' || transactionAmount.trim() !== '') {
+            const newTransactionRef = push(transactionsRef);
+            await set(newTransactionRef, {
+              customerName,
+              productName: finalProductName,
+              amount: finalAmount,
+              type: transactionType,
+              timestamp: serverTimestamp(),
+            });
+        }
 
-        toast({ title: 'Success', description: 'Transaction saved successfully.' });
-        router.back();
+        toast({ title: 'Success', description: 'Entry saved successfully.' });
+        if (defaultCustomerName) {
+           router.push(`/khata/${encodeURIComponent(defaultCustomerName)}`);
+        } else {
+           router.push('/khata');
+        }
 
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: `Failed to save transaction: ${error.message}` });
@@ -193,27 +213,25 @@ export default function AddTransactionPage() {
                         )}
                     </div>
                 </div>
-                {!defaultCustomerName && (
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="mobile-number" className="text-right">
-                            {t('mobile')}
-                        </Label>
-                        <div className="relative col-span-3 flex items-center gap-2">
-                            <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                id="mobile-number"
-                                type="tel"
-                                value={mobileNumber}
-                                onChange={(e) => setMobileNumber(e.target.value)}
-                                placeholder={t('mobileNumber')}
-                                className="pl-10"
-                            />
-                            <Button variant='outline' size="icon" onClick={handleContactPick}>
-                                <Contact className="h-4 w-4" />
-                            </Button>
-                        </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="mobile-number" className="text-right">
+                        {t('mobile')}
+                    </Label>
+                    <div className="relative col-span-3 flex items-center gap-2">
+                        <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="mobile-number"
+                            type="tel"
+                            value={mobileNumber}
+                            onChange={(e) => setMobileNumber(e.target.value)}
+                            placeholder={t('mobileNumber')}
+                            className="pl-10"
+                        />
+                        <Button variant='outline' size="icon" onClick={handleContactPick}>
+                            <Contact className="h-4 w-4" />
+                        </Button>
                     </div>
-                )}
+                </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="product-name" className="text-right">
                     {t('product')}

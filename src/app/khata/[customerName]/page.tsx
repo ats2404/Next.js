@@ -8,7 +8,7 @@ import { onValue, ref, query, orderByChild, equalTo } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ChevronLeft, Phone, Calendar as CalendarIcon, FileText, IndianRupee, MessageSquare } from 'lucide-react';
+import { ChevronLeft, Phone, Calendar as CalendarIcon, FileText, IndianRupee, MessageSquare, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateQrCodeImage } from '@/lib/qr-code-generator';
@@ -227,16 +227,24 @@ export default function CustomerDetailPage() {
                 <div>
                     <h1 className="text-lg font-semibold flex items-center gap-2">
                         {customerName}
-                        <span className="text-xs bg-blue-200 text-primary rounded-sm px-1.5 py-0.5">{t('customer')}</span>
                     </h1>
-                    <p className="text-xs opacity-80">{t('viewSettings')}</p>
+                    {mobileNumber && mobileNumber !== '0000000000' && (
+                        <p className="text-xs opacity-80 flex items-center gap-1">
+                            {mobileNumber}
+                        </p>
+                    )}
                 </div>
             </div>
-            <a href={`tel:${mobileNumber}`}>
-                <Button variant="ghost" size="icon">
-                    <Phone className="h-6 w-6" />
+             <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => router.push(`/khata/add-transaction?customerName=${encodeURIComponent(customerName)}`)}>
+                    <Pencil className="h-5 w-5" />
                 </Button>
-            </a>
+                <a href={`tel:${mobileNumber}`}>
+                    <Button variant="ghost" size="icon">
+                        <Phone className="h-5 w-5" />
+                    </Button>
+                </a>
+            </div>
       </header>
 
       <main className="flex-1 overflow-y-auto pb-32">
