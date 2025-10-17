@@ -1,3 +1,4 @@
+
 {
     "customer": "ग्राहक",
     "supplier": "सप्लायर",
@@ -8,7 +9,7 @@
     "searchCustomer": "ग्राहक शोधा",
     "filter": "फिल्टर करा",
     "cashbook": "कॅशबुक",
-    "addCustomer": "ग्राहक జోడా",
+    "addCustomer": "ग्राहक जोडा",
     "parties": "पार्टीઝ",
     "loan": "लोन",
     "noCustomersFound": "ग्राहक आढळले नाहीत.",
@@ -26,7 +27,7 @@
     "balance": "बॅलन्स",
     "youGaveAmount": "तुम्ही दिले ₹",
     "youGotAmount": "तुम्हाला मिळाले ₹",
-    "addTransaction": " व्यवहार జోడా",
+    "addTransaction": "व्यवहार जोडा",
     "recordTransaction": "एक व्यवहार रेकॉर्ड करा",
     "recordTransactionDescription": "आपल्या ग्राहकासाठी मॅन्युअली एक व्यवहार रेकॉर्ड करा.",
     "listeningFor": "साठी ऐकत आहे",
