@@ -16,6 +16,7 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { format } from 'date-fns';
 import { ScrollArea } from './ui/scroll-area';
+import { useRouter } from 'next/navigation';
 
 interface CustomerHistoryDialogProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export function CustomerHistoryDialog({
   const { user, db } = useUser() && useDatabase() ? { user: useUser().user, db: useDatabase() } : { user: null, db: null };
   const [transactions, setTransactions] = useState<any[]>([]);
   const [balance, setBalance] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
     if (!isOpen || !db || !user || !customerName) {
@@ -91,6 +93,13 @@ export function CustomerHistoryDialog({
     };
   }, [isOpen, user, db, customerName]);
 
+  const handleGoToEntry = () => {
+    if (customerName) {
+      router.push(`/khata/add-transaction?customerName=${encodeURIComponent(customerName)}`);
+      onOpenChange(false);
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -137,7 +146,8 @@ export function CustomerHistoryDialog({
             </ScrollArea>
         </div>
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Close</Button>
+            <Button variant="outline" onClick={handleGoToEntry}>Edit Entry</Button>
+            <Button onClick={handleGoToEntry}>Go to Entry</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
