@@ -31,7 +31,7 @@ export default function AddTransactionPage() {
   const [productName, setProductName] = useState('');
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionType, setTransactionType] = useState<'credit' | 'debit'>(defaultTransactionType);
-  const [fieldToUpdate, setFieldToUpdate] = useState<'amount' | 'productName' | null>(null);
+  const [fieldToUpdate, setFieldToUpdate] = useState<'amount' | 'productName' | 'customerName' | null>(null);
 
   useEffect(() => {
     setCustomerName(defaultCustomerName);
@@ -46,6 +46,8 @@ export default function AddTransactionPage() {
       }
     } else if (fieldToUpdate === 'productName') {
         setProductName(text);
+    } else if (fieldToUpdate === 'customerName') {
+        setCustomerName(text);
     }
     setFieldToUpdate(null);
   }, [fieldToUpdate]);
@@ -59,7 +61,7 @@ export default function AddTransactionPage() {
     onResult: onRecognitionResult,
   });
 
-  const handlePickContact = async () => {
+  const handleContactPick = async () => {
     if ('contacts' in navigator && 'select' in (navigator as any).contacts) {
       try {
         const contacts = await (navigator as any).contacts.select(['name', 'tel'], { multiple: false });
@@ -96,30 +98,32 @@ export default function AddTransactionPage() {
       return;
     }
 
-    if (!customerName || !productName || !transactionAmount ) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Please fill all fields.' });
+    if (!customerName) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Customer name is required.' });
       return;
     }
+
+    const finalMobileNumber = mobileNumber.trim() === '' ? '0000000000' : mobileNumber;
+    const finalProductName = productName.trim() === '' ? 'No Product' : productName;
+    const finalAmount = transactionAmount.trim() === '' ? 0 : parseFloat(transactionAmount);
 
     const transactionsRef = ref(db, `khata/${user.uid}/transactions`);
     const customersRef = ref(db, `khata/${user.uid}/customers`);
     
     try {
-        if (!defaultCustomerName) {
-            const snapshot = await get(child(customersRef, customerName));
-            if (!snapshot.exists()) {
-                await set(child(customersRef, customerName), {
-                    name: customerName,
-                    mobileNumber: mobileNumber,
-                });
-            }
+        const snapshot = await get(child(customersRef, customerName));
+        if (!snapshot.exists()) {
+            await set(child(customersRef, customerName), {
+                name: customerName,
+                mobileNumber: finalMobileNumber,
+            });
         }
         
         const newTransactionRef = push(transactionsRef);
         await set(newTransactionRef, {
           customerName,
-          productName,
-          amount: parseFloat(transactionAmount),
+          productName: finalProductName,
+          amount: finalAmount,
           type: transactionType,
           timestamp: serverTimestamp(),
         });
@@ -133,7 +137,7 @@ export default function AddTransactionPage() {
   };
 
 
-  const handleMicClick = (field: 'amount' | 'productName') => {
+  const handleMicClick = (field: 'amount' | 'productName' | 'customerName') => {
     if (!isSupported) {
       toast({
         variant: 'destructive',
@@ -164,7 +168,7 @@ export default function AddTransactionPage() {
             <CardHeader>
                 <CardTitle>{t('recordTransaction')}</CardTitle>
                 <CardDescription>
-                    {t('recordTransactionDescription')} {isListening && `${t('listeningFor')} ${fieldToUpdate === 'amount' ? t('amount') : t('productName')}...`}
+                    {t('recordTransactionDescription')} {isListening && `${t('listeningFor')} ${t(fieldToUpdate || '')}...`}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -183,8 +187,8 @@ export default function AddTransactionPage() {
                         readOnly={!!defaultCustomerName}
                         />
                         {!defaultCustomerName && (
-                            <Button variant='outline' size="icon" onClick={handlePickContact}>
-                                <Contact className="h-4 w-4" />
+                            <Button variant={isListening && fieldToUpdate === 'customerName' ? 'destructive' : 'outline'} size="icon" onClick={() => handleMicClick('customerName')}>
+                                <Mic className="h-4 w-4" />
                             </Button>
                         )}
                     </div>
@@ -194,7 +198,7 @@ export default function AddTransactionPage() {
                         <Label htmlFor="mobile-number" className="text-right">
                             {t('mobile')}
                         </Label>
-                        <div className="relative col-span-3">
+                        <div className="relative col-span-3 flex items-center gap-2">
                             <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 id="mobile-number"
@@ -204,6 +208,9 @@ export default function AddTransactionPage() {
                                 placeholder={t('mobileNumber')}
                                 className="pl-10"
                             />
+                            <Button variant='outline' size="icon" onClick={handleContactPick}>
+                                <Contact className="h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
                 )}
