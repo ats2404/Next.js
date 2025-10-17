@@ -145,8 +145,8 @@ export function CustomerHistoryDialog({
                 </div>
             </ScrollArea>
         </div>
-        <DialogFooter>
-            <Button variant="outline" onClick={handleGoToEntry}>Edit Entry</Button>
+        <DialogFooter className="sm:justify-between">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
             <Button onClick={handleGoToEntry}>Go to Entry</Button>
         </DialogFooter>
       </DialogContent>
