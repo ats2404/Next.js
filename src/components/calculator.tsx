@@ -344,7 +344,7 @@ const Calculator = () => {
         
         <Button onClick={() => handleNumberClick('0')} className={defaultButtonClass}>0</Button>
         <Button onClick={handleDecimalClick} className={defaultButtonClass}>.</Button>
-        {upiId ? (
+        {status === 'active' ? (
           <Button onClick={openKhataBook} className={`${opButtonClass} flex-col h-20 w-20 text-base`}>
               <KhataIcon className="h-8 w-8 mb-1" />
               Khata
@@ -421,5 +421,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
