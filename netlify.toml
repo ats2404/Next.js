@@ -1,0 +1,13 @@
+# Netlify configuration file for a Next.js project.
+# This tells Netlify how to build and deploy your site.
+
+[build]
+  # This command tells Netlify to build your Next.js application.
+  command = "next build"
+  # This directory is where the output of the build will be placed.
+  publish = ".next"
+
+# The Essential Next.js Build Plugin automatically configures
+# your site to work correctly on Netlify.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

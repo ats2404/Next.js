@@ -48,7 +48,7 @@ export function GlobalVoiceSearch() {
   const { toast } = useToast();
   const [historyCustomerName, setHistoryCustomerName] = useState<string | null>(null);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
-  const [upiId, setUpiId] = useState('');
+  const [status, setStatus] = useState('inactive');
 
   useEffect(() => {
     if (user && db) {
@@ -60,19 +60,19 @@ export function GlobalVoiceSearch() {
           const mobileUnsubscribe = onValue(mobileUserRef, (mobileSnapshot) => {
             const mobileData = mobileSnapshot.val();
             if (mobileData) {
-              setUpiId(mobileData.upiId || '');
+              setStatus(mobileData.status || 'inactive');
             } else {
-              setUpiId('');
+              setStatus('inactive');
             }
           });
           return () => mobileUnsubscribe();
         } else {
-          setUpiId('');
+          setStatus('inactive');
         }
       });
       return () => unsubscribe();
     } else {
-        setUpiId('');
+        setStatus('inactive');
     }
   }, [user, db]);
 
@@ -95,8 +95,8 @@ export function GlobalVoiceSearch() {
                 const distance = levenshteinDistance(formattedName, name.toLowerCase());
                 const similarity = 1 - (distance / Math.max(formattedName.length, name.length));
 
-                // Find the best match with at least 30% similarity
-                if (similarity >= 0.3 && distance < minDistance) {
+                // Find the best match with at least 10% similarity
+                if (similarity >= 0.1 && distance < minDistance) {
                     minDistance = distance;
                     bestMatch = name;
                 }
@@ -165,8 +165,8 @@ export function GlobalVoiceSearch() {
     setHistoryCustomerName(null);
   }
 
-  if (!user || !upiId) {
-    return null; // Don't show if user is not logged in or has no UPI ID
+  if (!user || status !== 'active') {
+    return null; // Don't show if user is not logged in or has no active subscription
   }
 
   return (
@@ -199,5 +199,3 @@ export function GlobalVoiceSearch() {
     </>
   );
 }
-
-    
